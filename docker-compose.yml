@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: master
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data:Z
+      - ./database:/docker-entrypoint-initdb.d:z
+    networks:
+      - dev_net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: keycloak_dev
+    restart: always
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/master
+      KC_DB_USERNAME: dev_user
+      KC_DB_PASSWORD: dev_pass
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+    volumes:
+      - ./keycloak_data:/opt/keycloak/data
+    ports:
+      - 8087:8080
+      - 8443:8443
+    depends_on:
+      - postgres
+    networks:
+      - dev_net
+    command: start-dev
+
+networks:
+  dev_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
