@@ -1,19 +1,48 @@
 package br.unifor.service
 
+import br.unifor.dto.UserTokenDTO
 import br.unifor.entities.todo.User
 import br.unifor.entities.todo.UserEvent
-import br.unifor.exception.FieldException
-import br.unifor.extensions.*
-import br.unifor.form.RegisterUserForm
+import br.unifor.exception.*
 import br.unifor.exception.model.FieldError
+import br.unifor.extensions.*
+import br.unifor.form.LoginUserForm
+import br.unifor.form.RegisterUserForm
+import br.unifor.rest.client.KeycloakRestClient
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
 import jakarta.transaction.Transactional
 import jakarta.validation.Valid
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import org.eclipse.microprofile.rest.client.inject.RestClient
+import org.keycloak.admin.client.Keycloak
+import org.keycloak.admin.client.KeycloakBuilder
+import org.keycloak.representations.idm.CredentialRepresentation
+import org.keycloak.representations.idm.UserRepresentation
 
 @ApplicationScoped
 class AuthService {
+    @ConfigProperty(name = "kc-url-base")
+    private lateinit var kcUrl: String
+
+    @ConfigProperty(name = "kc-base-realm")
+    private lateinit var kcRealm: String
+
+    @ConfigProperty(name = "kc-admin-client")
+    private lateinit var kcClientId: String
+
+    @ConfigProperty(name = "kc-admin-client-secret")
+    private lateinit var kcClientSecret: String
+
+    @ConfigProperty(name = "kc-public-client")
+    private lateinit var kcPublicClient: String
+
+    @Inject
+    @field:RestClient
+    private lateinit var apiKC: KeycloakRestClient
+
     @Transactional
-    fun registerUser(@Valid form: RegisterUserForm) {
+    fun registerUser(@Valid form: RegisterUserForm): UserTokenDTO {
         val validsFields: MutableList<FieldError?> = mutableListOf(
             validPassword(
                 password = form.password, //
@@ -43,6 +72,90 @@ class AuthService {
         ).apply {
             this.persist()
         }
+
+        registerUserInKc(
+            form = form, //
+            firstName = firstName, //
+            lastName = lastName, //
+        )
+
+        return login(
+            form = LoginUserForm(
+                username = form.username, //
+                password = form.password, //
+            )
+        )
+    }
+
+    fun login(form: LoginUserForm): UserTokenDTO = User.list("UPPER(username) = '${form.username.uppercase()}'") //
+        .takeIf { it.isNotEmpty() } //
+        ?.let { users: List<User> ->
+            users.findLast { it.isActive } //
+                ?.let {
+                    runCatching {
+                        apiKC.loginKc(
+                            realm = kcRealm, //
+                            grantType = "password", //
+                            clientId = kcPublicClient, //
+                            username = form.username, //
+                            password = form.password, //
+                        )
+                    }.getOrElse {
+                        throw APIException(
+                            title = "Falha no logar", //
+                            message = "Erro ao tentar realizar login.", //
+                            status = 400, //
+                        )
+                    }.let { UserTokenDTO(kcUserToken = it) }
+
+                } //
+                ?: throw UserNotActiveException(username = form.username)
+
+        } //
+        ?: throw UserNotFoundException(username = form.username)
+
+    private fun registerUserInKc(
+        form: RegisterUserForm, //
+        firstName: String, //
+        lastName: String, //
+    ) {
+        val kc: Keycloak = KeycloakBuilder.builder() //
+            .serverUrl(kcUrl) //
+            .realm(kcRealm) //
+            .grantType("client_credentials") //
+            .clientId(kcClientId) //
+            .clientSecret(kcClientSecret) //
+            .build()
+
+        kc.realm(kcRealm).users() //
+            .create(
+                UserRepresentation().apply {
+                    this.username = form.username
+                    this.firstName = firstName
+                    this.lastName = lastName
+                    this.email = form.email
+                    this.isEnabled = true
+                    this.isEmailVerified = true
+                }) //
+            .let { response ->
+                if (response.status != 201) throw RegisterKcException()
+                val userId = kotlin.runCatching { response.location.path.replace(".*/([^/]+)$".toRegex(), "$1") } //
+                    .getOrNull() ?: throw RegisterKcException()
+
+                (kc.realm(kcRealm) //
+                    .users() //
+                    .get(userId) //
+                    ?: throw RegisterKcException()) //
+                    .apply {
+                        this.resetPassword(CredentialRepresentation().apply {
+                            this.isTemporary = false
+                            this.type = CredentialRepresentation.PASSWORD
+                            this.value = form.password
+                        })
+                    }
+            }
+
+        kc.close()
     }
 
     private fun validPassword(
@@ -68,7 +181,7 @@ class AuthService {
             username.takeIf { it.hasSpecialCharacters } //
                 ?.let { "Um usuário não pode conter caracteres especiais." } //
             // Verifica se já existe um usuário igual no banco
-                ?: User.list("UPPER(username) = '${username.uppercase()}'") //
+                ?: User.list("UPPER(username) = '${username.uppercase()}' AND isActive = true") //
                     .takeIf { it.isNotEmpty() } //
                     ?.let { "Já existe uma pessoa cadastrada com esse usuário." } //
             )?.let { FieldError(field = "username", message = it) }

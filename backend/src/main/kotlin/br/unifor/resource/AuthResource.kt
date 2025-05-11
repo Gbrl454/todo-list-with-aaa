@@ -1,5 +1,7 @@
 package br.unifor.resource
 
+import br.unifor.dto.UserTokenDTO
+import br.unifor.form.LoginUserForm
 import br.unifor.form.RegisterUserForm
 import br.unifor.service.AuthService
 import jakarta.inject.Inject
@@ -17,7 +19,10 @@ class AuthResource(
     @POST
     @Transactional
     @Path("/register")
-    fun registerUser(@Valid form: RegisterUserForm) = authService.registerUser(form = form)
+    fun registerUser(@Valid form: RegisterUserForm): UserTokenDTO = authService.registerUser(form = form)
 
+    @POST
+    @Path("/login")
+    fun login(@Valid form: LoginUserForm) = authService.login(form = form)
 }
 
