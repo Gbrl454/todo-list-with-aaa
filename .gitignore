@@ -1,0 +1,11 @@
+backend/.gradle/*
+backend/build/*
+backend/.idea
+backend/*.ipr
+backend/*.iml
+backend/*.iws
+backend/.env
+backend/.quarkus/cli/plugins/*
+backend/.certs/*
+backend/.kotlin/*
+backend/gradle/*
