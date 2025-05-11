@@ -1,0 +1,102 @@
+package br.unifor.entities.todo
+
+import br.unifor.entities.GenericEntity
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanion
+import jakarta.persistence.*
+import java.time.LocalDateTime
+
+/**Tabela de atividades*/
+@Entity
+@Table(name = "TASK", schema = "TODO")
+class Task(
+    /**Identificador único de atividade*/
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) @Column(
+        name = "ID_TASK", //
+        nullable = false, //
+        updatable = false, //
+    ) var id: Long, //
+
+    /**Usuário dono da atividade*/
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(
+        name = "ID_USER_OWNER", //
+        referencedColumnName = "ID_USER", //
+        nullable = false, //
+        updatable = false, //
+    ) var userOwner: User, //
+
+    /**Nome da atividade*/
+    @Column(
+        name = "NM_TASK", //
+        nullable = false, //
+        updatable = false, //
+    ) var nmTask: String, //
+
+    /**Descrição da atividade*/
+    @Column(
+        name = "DS_TASK", //
+        nullable = false, //
+        updatable = false, //
+    ) var dsTask: String, //
+
+    /**Indica se a atividade é privada*/
+    @Column(
+        name = "IS_PRIVATE_TASK", //
+        nullable = false, //
+        updatable = false, //
+    ) var isPrivateTask: Boolean, //
+
+    /**Data limite da atividade*/
+    @Column(
+        name = "DT_DEADLINE", //
+        nullable = false, //
+        updatable = false, //
+    ) var dtDeadline: LocalDateTime, //
+
+    /**Data de realização da atividade*/
+    @Column(
+        name = "DT_DO", //
+        updatable = false, //
+    ) var dtDo: LocalDateTime?, //
+
+    /**Data de inclusão do usuário*/
+    @Column(
+        name = "DT_INCLUSION", //
+        nullable = false, //
+        updatable = false, //
+    ) var dtInclusion: LocalDateTime, //
+
+    /**Indica se o usuário está ativo*/
+    @Column(
+        name = "IS_ACTIVE", //
+        nullable = false, //
+        updatable = false, //
+    ) var isActive: Boolean, //
+) : GenericEntity() {
+    companion object : PanacheCompanion<Task>
+
+    constructor() : this(
+        id = 0, //
+        userOwner = User(), //
+        nmTask = "", //
+        dsTask = "", //
+        isPrivateTask = true, //
+        dtDeadline = LocalDateTime.MAX, //
+        dtDo = null, //
+        dtInclusion = LocalDateTime.now(), //
+        isActive = true, //
+    )
+
+    override fun toString(): String = """
+        {
+            "id": $id,
+            "userOwner": $userOwner,
+            "nmTask": "$nmTask",
+            "dsTask": "$dsTask",
+            "isPrivateTask": $isPrivateTask,
+            "dtDeadline": "$dtDeadline",
+            "dtDo": "$dtDo",
+            "dtInclusion": "$dtInclusion",
+            "isActive": $isActive
+        }
+        """
+}
