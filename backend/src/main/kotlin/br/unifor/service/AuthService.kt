@@ -114,6 +114,37 @@ class AuthService {
         } //
         ?: throw UserNotFoundException(username = form.username)
 
+    @Transactional
+    fun disableUser(
+        loggedUser: User, //
+        username: String, //
+    ) {
+        val kc: Keycloak = KeycloakBuilder.builder() //
+            .serverUrl(kcUrl) //
+            .realm(kcRealm) //
+            .grantType("client_credentials") //
+            .clientId(kcClientId) //
+            .clientSecret(kcClientSecret) //
+            .build()
+
+        val kcUser: UserRepresentation = kc.realm(kcRealm).users() //
+            .search(username, true) //
+            .takeIf { it.isNotEmpty() } //
+            ?.firstOrNull() //
+            ?: throw UserNotFoundException(username = username)
+
+        disableUserInDb(
+            loggedUser = loggedUser, //
+            username = username, //
+        )
+
+        val userResource = kc.realm(kcRealm).users().get(kcUser.id)
+        kcUser.isEnabled = false
+        userResource.update(kcUser)
+
+        kc.close()
+    }
+
     private fun registerUserInKc(
         form: RegisterUserForm, //
         firstName: String, //
@@ -176,14 +207,11 @@ class AuthService {
             )
         }
 
-    private fun validUsername(username: String): FieldError? = (
-            // Verifica se o usuário possuiu caracteres especiais
-            username.takeIf { it.hasSpecialCharacters } //
-                ?.let { "Um usuário não pode conter caracteres especiais." } //
-            // Verifica se já existe um usuário igual no banco
-                ?: User.list("UPPER(username) = '${username.uppercase()}' AND isActive = true") //
-                    .takeIf { it.isNotEmpty() } //
-                    ?.let { "Já existe uma pessoa cadastrada com esse usuário." } //
+    private fun validUsername(username: String): FieldError? = (username.takeIf { it.hasSpecialCharacters } //
+        ?.let { "Um usuário não pode conter caracteres especiais." } //
+        ?: User.list("UPPER(username) = '${username.uppercase()}' AND isActive = true") //
+            .takeIf { it.isNotEmpty() } //
+            ?.let { "Já existe uma pessoa cadastrada com esse usuário." } //
             )?.let { FieldError(field = "username", message = it) }
 
     private fun String.validAndGetFullName(validsFields: MutableList<FieldError?>): Triple<String, String?, String> =
@@ -198,4 +226,17 @@ class AuthService {
             )
             Triple("", null, "")
         }
+
+    private fun disableUserInDb(
+        loggedUser: User, //
+        username: String, //
+    ): User = User.findByUsername(username = username).apply {
+        this.isActive = false
+        this.persist()
+
+        UserEvent.disable(
+            user = this, //
+            userOperator = loggedUser, //
+        ).persist()
+    }
 }

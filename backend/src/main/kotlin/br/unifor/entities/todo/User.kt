@@ -1,6 +1,7 @@
 package br.unifor.entities.todo
 
 import br.unifor.entities.GenericEntity
+import br.unifor.exception.UserNotFoundException
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanion
 import jakarta.persistence.*
 import java.time.LocalDateTime
@@ -60,10 +61,15 @@ class User(
     @Column(
         name = "IS_ACTIVE", //
         nullable = false, //
-        updatable = false, //
     ) var isActive: Boolean, //
 ) : GenericEntity() {
-    companion object : PanacheCompanion<User>
+    companion object : PanacheCompanion<User> {
+        fun findByUsername(username: String): User =
+            User.list("UPPER(username) = '${username.uppercase()}' AND isActive = true") //
+                .takeIf { it.isNotEmpty() } //
+                ?.first() //
+                ?: throw UserNotFoundException(username = username)
+    }
 
     constructor() : this(
         id = 0, //
