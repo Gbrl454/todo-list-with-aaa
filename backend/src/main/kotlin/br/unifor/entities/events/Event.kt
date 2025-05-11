@@ -1,6 +1,7 @@
 package br.unifor.entities.events
 
 import br.unifor.entities.GenericEntity
+import br.unifor.exception.EventNotFoundException
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanion
 import jakarta.persistence.*
 
@@ -31,19 +32,14 @@ class Event(
         updatable = false, //
     ) var nmEvent: String, //
 ) : GenericEntity() {
-    companion object : PanacheCompanion<Event>
+    companion object : PanacheCompanion<Event> {
+        fun findEventByIdOrException(idEvent: Long): Event = Event.findById(idEvent) //
+            ?: throw EventNotFoundException(idEvent = idEvent)
+    }
 
     constructor() : this(
         id = 0, //
         eventDomain = EventDomain(), //
         nmEvent = "", //
     )
-
-    override fun toString(): String = """
-        {
-            "id": $id,
-            "eventDomain": $eventDomain,
-            "nmEvent": "$nmEvent"
-        }
-        """
 }

@@ -1,5 +1,6 @@
 CREATE TABLE TODO.USER ( -- Tabela de usuários
     ID_USER BIGSERIAL PRIMARY KEY, -- Identificador único de usuário
+    USERNAME VARCHAR(50) NOT NULL, -- Nome de acesso
     FR_NAME VARCHAR(50) NOT NULL, -- Primeiro nome
     MD_NAME VARCHAR(100), -- Nome do meio
     LT_NAME VARCHAR(50) NOT NULL, -- Último nome
@@ -10,6 +11,7 @@ CREATE TABLE TODO.USER ( -- Tabela de usuários
 
 COMMENT ON TABLE TODO.USER IS 'Tabela de usuários';
 COMMENT ON COLUMN TODO.USER.ID_USER IS 'Identificador único de usuário';
+COMMENT ON COLUMN TODO.USER.USERNAME IS 'Nome de acesso';
 COMMENT ON COLUMN TODO.USER.FR_NAME IS 'Primeiro nome';
 COMMENT ON COLUMN TODO.USER.MD_NAME IS 'Nome do meio';
 COMMENT ON COLUMN TODO.USER.LT_NAME IS 'Último nome';

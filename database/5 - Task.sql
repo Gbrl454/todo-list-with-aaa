@@ -1,13 +1,11 @@
 CREATE TABLE TODO.TASK ( -- Tabela de atividades
     ID_TASK BIGSERIAL PRIMARY KEY, -- Identificador único de atividade
-    
     ID_USER_OWNER BIGINT NOT NULL, -- Usuário dono da atividade
     NM_TASK VARCHAR(50) NOT NULL, -- Nome da atividade
     DS_TASK TEXT NOT NULL, -- Descrição da atividade
-    IS_PRIVATE_TASK BOOLEAN NOT NULL DEFAULT TRUE -- Indica se a atividade é privada
+    IS_PRIVATE_TASK BOOLEAN NOT NULL DEFAULT TRUE, -- Indica se a atividade é privada
     DT_DEADLINE TIMESTAMP NOT NULL, -- Data limite da atividade
     DT_DO TIMESTAMP, -- Data de realização da atividade
-    
     DT_INCLUSION TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Data de inclusão da atividade
     IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE -- Indica se a atividade está ativa
 );

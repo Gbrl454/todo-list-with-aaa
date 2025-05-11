@@ -1,7 +1,7 @@
 package br.unifor.exception.handlers
 
 import br.unifor.exception.APIException
-import br.unifor.extensions.makeDefaultResponse
+import br.unifor.extensions.makeResponse
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriInfo
@@ -14,6 +14,6 @@ class NotImplementedErrorHandler(@Context private val uriInfo: UriInfo) : Except
         title = "TODO", //
         message = exception?.message ?: "", //
         status = 500, //
-    ).makeDefaultResponse(uriInfo = uriInfo) //
+    ).makeResponse(uriInfo = uriInfo) //
         ?: run { Response.status(Response.Status.INTERNAL_SERVER_ERROR).build() }
 }

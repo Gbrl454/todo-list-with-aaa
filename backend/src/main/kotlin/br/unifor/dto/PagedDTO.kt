@@ -3,7 +3,7 @@ package br.unifor.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-interface DTO
+sealed interface DTO
 
 @Serializable
 data class PagedDTO<T : DTO>(

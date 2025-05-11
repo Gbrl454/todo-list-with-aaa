@@ -48,7 +48,22 @@ class UserEvent(
         updatable = false, //
     ) var dtOccurrence: LocalDateTime, //
 ) : GenericEntity() {
-    companion object : PanacheCompanion<UserEvent>
+    companion object : PanacheCompanion<UserEvent> {
+        /**Usuário criado*/
+        fun create(user: User, userOperator: User): UserEvent = UserEvent().apply {
+            this.event = Event.findEventByIdOrException(idEvent = 1)
+            this.user = user
+            this.userOperator = userOperator
+        }
+
+        /**Usuário desativado*/
+        fun disable(user: User, userOperator: User): UserEvent = UserEvent().apply {
+            this.event = Event.findEventByIdOrException(idEvent = 2)
+            this.user = user
+            this.userOperator = userOperator
+        }
+
+    }
 
     constructor() : this(
         id = 0, //
@@ -57,14 +72,4 @@ class UserEvent(
         userOperator = User(), //
         dtOccurrence = LocalDateTime.now(), //
     )
-
-    override fun toString(): String = """
-        {
-            "id": $id,
-            "event": $event,
-            "user": $user,
-            "userOperator": $userOperator,
-            "dtOccurrence": "$dtOccurrence"
-        }
-        """
 }

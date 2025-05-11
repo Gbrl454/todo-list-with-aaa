@@ -15,6 +15,12 @@ class User(
         nullable = false, //
         updatable = false, //
     ) var id: Long, //
+    /**Nome de acesso*/
+    @Column(
+        name = "USERNAME", //
+        nullable = false, //
+        updatable = false, //
+    ) var username: String, //
 
     /**Primeiro nome*/
     @Column(
@@ -56,12 +62,12 @@ class User(
         nullable = false, //
         updatable = false, //
     ) var isActive: Boolean, //
-
 ) : GenericEntity() {
     companion object : PanacheCompanion<User>
 
     constructor() : this(
         id = 0, //
+        username = "", //
         frName = "", //
         mdName = null, //
         ltName = "", //
@@ -69,16 +75,4 @@ class User(
         dtInclusion = LocalDateTime.now(), //
         isActive = true, //
     )
-
-    override fun toString(): String = """
-        {
-            "id": $id,
-            "frName": "$frName",
-            "mdName": "$mdName",
-            "ltName": "$ltName",
-            "email": "$email",
-            "dtInclusion": "$dtInclusion",
-            "isActive": $isActive
-        }
-        """
 }

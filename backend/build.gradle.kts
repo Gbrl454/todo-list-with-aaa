@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.0.21"
     kotlin("plugin.allopen") version "2.0.21"
+    kotlin("plugin.serialization") version "2.0.21"
     id("io.quarkus")
 }
 
@@ -22,7 +23,7 @@ dependencies {
     implementation("io.quarkus:quarkus-smallrye-openapi")
     implementation("io.quarkus:quarkus-oidc")
     implementation("io.quarkus:quarkus-kotlin")
-    implementation("io.quarkus:quarkus-jdbc-oracle")
+    implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-smallrye-health")
     implementation("io.quarkus:quarkus-container-image-jib")
     implementation("io.quarkus:quarkus-rest-kotlin-serialization")

@@ -1,4 +1,4 @@
-package br.unifor.model
+package br.unifor.exception.model
 
 import kotlinx.serialization.Serializable
 
