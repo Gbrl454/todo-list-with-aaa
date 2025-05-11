@@ -15,17 +15,18 @@ Atividade avaliativa - Projeto de Ciberproteção - Aplicação WEB de TODO List
 
 ### Usuários
 
-| Método |     Rota     |         Descrição         |
-|:------:|:------------:|:-------------------------:|
-|  POST  |    /user     |     Cria novo usuário     |
-|  PUT   |    /user     | Atualiza token de usuário |
-|  POST  | /user/login  |     Login do usuário      |
-|  POST  | /user/logout |     Logout do usuário     |
+| Método |      Rota      |         Descrição         |
+| :----: | :------------: | :-----------------------: |
+|  POST  | /auth/register |     Cria novo usuário     |
+|  PUT   | /auth/refresh  | Atualiza token de usuário |
+|  POST  |  /auth/login   |     Login do usuário      |
+|  POST  |  /auth/logout  |     Logout do usuário     |
+| DELETE |     /auth      |   Desabilita o usuário    |
 
 ### Atividades
 
 | Método |    Rota    |           Descrição            |
-|:------:|:----------:|:------------------------------:|
+| :----: | :--------: | :----------------------------: |
 |  POST  |   /task    |         Cria atividade         |
 |  PUT   |   /task    | Edita informações de atividade |
 |  PUT   | /task/{id} |  Marcar atividade como feita   |

@@ -41,6 +41,22 @@ class AuthService {
     @field:RestClient
     private lateinit var apiKC: KeycloakRestClient
 
+    private fun buildKc(): Keycloak =  //
+        KeycloakBuilder.builder() //
+            .serverUrl(kcUrl) //
+            .realm(kcRealm) //
+            .grantType("client_credentials") //
+            .clientId(kcClientId) //
+            .clientSecret(kcClientSecret) //
+            .build()
+
+    private fun Keycloak.searchUserInkcByUsername(username: String): UserRepresentation = //
+        this.realm(kcRealm).users() //
+            .search(username, true) //
+            .takeIf { it.isNotEmpty() } //
+            ?.firstOrNull() //
+            ?: throw UserNotFoundException(username = username)
+
     @Transactional
     fun registerUser(@Valid form: RegisterUserForm): UserTokenDTO {
         val validsFields: MutableList<FieldError?> = mutableListOf(
@@ -114,24 +130,26 @@ class AuthService {
         } //
         ?: throw UserNotFoundException(username = form.username)
 
+    fun logout(loggedUser: User, count: Int = 1) {
+        val kc: Keycloak = buildKc()
+        val kcUser: UserRepresentation = kc.searchUserInkcByUsername(username = loggedUser.username)
+
+        runCatching {
+            kc.realm(kcRealm).users().get(kcUser.id).logout()
+        }.onFailure {
+            if (count == 3) throw APIException(message = "Erro ao encerrar sessão.", status = 400)
+            else logout(loggedUser = loggedUser, count = count + 1)
+        }
+        kc.close()
+    }
+
     @Transactional
     fun disableUser(
         loggedUser: User, //
         username: String, //
     ) {
-        val kc: Keycloak = KeycloakBuilder.builder() //
-            .serverUrl(kcUrl) //
-            .realm(kcRealm) //
-            .grantType("client_credentials") //
-            .clientId(kcClientId) //
-            .clientSecret(kcClientSecret) //
-            .build()
-
-        val kcUser: UserRepresentation = kc.realm(kcRealm).users() //
-            .search(username, true) //
-            .takeIf { it.isNotEmpty() } //
-            ?.firstOrNull() //
-            ?: throw UserNotFoundException(username = username)
+        val kc: Keycloak = buildKc()
+        val kcUser: UserRepresentation = kc.searchUserInkcByUsername(username = username)
 
         disableUserInDb(
             loggedUser = loggedUser, //
@@ -150,13 +168,7 @@ class AuthService {
         firstName: String, //
         lastName: String, //
     ) {
-        val kc: Keycloak = KeycloakBuilder.builder() //
-            .serverUrl(kcUrl) //
-            .realm(kcRealm) //
-            .grantType("client_credentials") //
-            .clientId(kcClientId) //
-            .clientSecret(kcClientSecret) //
-            .build()
+        val kc: Keycloak = buildKc()
 
         kc.realm(kcRealm).users() //
             .create(

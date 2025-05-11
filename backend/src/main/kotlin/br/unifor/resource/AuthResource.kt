@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional
 import jakarta.validation.Valid
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.POST
+import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import org.eclipse.microprofile.jwt.JsonWebToken
@@ -24,9 +25,17 @@ class AuthResource(
     @Path("/register")
     fun registerUser(@Valid form: RegisterUserForm): UserTokenDTO = authService.registerUser(form = form)
 
+    @PUT
+    @Path("/refresh")
+    fun refreshToken(): Nothing = TODO()
+
     @POST
     @Path("/login")
     fun login(@Valid form: LoginUserForm) = authService.login(form = form)
+
+    @POST
+    @Path("/logout")
+    fun logout() = authService.logout(loggedUser = jwt.getLoggedUser())
 
     @DELETE
     @Transactional
