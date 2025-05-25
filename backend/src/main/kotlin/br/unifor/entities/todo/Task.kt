@@ -3,7 +3,9 @@ package br.unifor.entities.todo
 import br.unifor.entities.GenericEntity
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanion
 import jakarta.persistence.*
+import java.security.MessageDigest
 import java.time.LocalDateTime
+import java.util.*
 
 /**Tabela de atividades*/
 @Entity
@@ -15,6 +17,13 @@ class Task(
         nullable = false, //
         updatable = false, //
     ) var id: Long, //
+
+    /**Hash da atividade*/
+    @Column(
+        name = "HASH_TASK", //
+        nullable = false, //
+        updatable = false, //
+    ) var hashTask: String, //
 
     /**Usuário dono da atividade*/
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(
@@ -76,6 +85,7 @@ class Task(
 
     constructor() : this(
         id = 0, //
+        hashTask = "", //
         userOwner = User(), //
         nmTask = "", //
         dsTask = "", //
@@ -86,17 +96,16 @@ class Task(
         isActive = true, //
     )
 
-    override fun toString(): String = """
-        {
-            "id": $id,
-            "userOwner": $userOwner,
-            "nmTask": "$nmTask",
-            "dsTask": "$dsTask",
-            "isPrivateTask": $isPrivateTask,
-            "dtDeadline": "$dtDeadline",
-            "dtDo": "$dtDo",
-            "dtInclusion": "$dtInclusion",
-            "isActive": $isActive
-        }
-        """
+    fun generateHashAndPersist(
+        userOwner: User, //
+    ): Task = apply {
+        this.userOwner = userOwner
+        this.hashTask = Base64.getUrlEncoder() //
+            .withoutPadding() //
+            .encodeToString(
+                MessageDigest.getInstance("SHA-256") //
+                    .digest("${System.currentTimeMillis()}${userOwner.username}${userOwner.dtInclusion}".toByteArray())
+            ).take(45)
+        this.persist()
+    }
 }

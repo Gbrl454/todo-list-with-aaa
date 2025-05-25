@@ -27,7 +27,9 @@ Atividade avaliativa - Projeto de Ciberproteção - Aplicação WEB de TODO List
 
 | Método |    Rota    |           Descrição            |
 | :----: | :--------: | :----------------------------: |
+|  GET  |   /task    |         Lista atividades         |
+|  GET  |   /task/{hashTask}    |         Detalha atividade         |
 |  POST  |   /task    |         Cria atividade         |
 |  PUT   |   /task    | Edita informações de atividade |
-|  PUT   | /task/{id} |  Marcar atividade como feita   |
-| DELETE | /task/{id} |        Remove atividade        |
+|  PUT   | /task/{hashTask} |  Marcar atividade como feita   |
+| DELETE | /task/{hashTask} |        Remove atividade        |

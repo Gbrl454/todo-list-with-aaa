@@ -1,5 +1,6 @@
 CREATE TABLE TODO.TASK ( -- Tabela de atividades
     ID_TASK BIGSERIAL PRIMARY KEY, -- Identificador único de atividade
+    HASH_TASK VARCHAR(50) NOT NULL, -- Hash da atividade
     ID_USER_OWNER BIGINT NOT NULL, -- Usuário dono da atividade
     NM_TASK VARCHAR(50) NOT NULL, -- Nome da atividade
     DS_TASK TEXT NOT NULL, -- Descrição da atividade
@@ -12,6 +13,7 @@ CREATE TABLE TODO.TASK ( -- Tabela de atividades
 
 COMMENT ON TABLE TODO.TASK IS 'Tabela de atividades';
 COMMENT ON COLUMN TODO.TASK.ID_TASK IS 'Identificador único de atividade';
+COMMENT ON COLUMN TODO.TASK.HASH_TASK IS 'Hash da atividade';
 COMMENT ON COLUMN TODO.TASK.ID_USER_OWNER IS 'Usuário dono da atividade';
 COMMENT ON COLUMN TODO.TASK.NM_TASK IS 'Nome da atividade';
 COMMENT ON COLUMN TODO.TASK.DS_TASK IS 'Descrição da atividade';

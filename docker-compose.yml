@@ -31,8 +31,9 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
       KC_HTTP_ENABLED: "true"
+      KEYCLOAK_EXTRA_ARGS: "-Dkeycloak.import=/opt/keycloak/data/import/"
     volumes:
-      - ./keycloak_data:/opt/keycloak/data
+      - ./keycloak_data:/opt/keycloak/data:z
     ports:
       - 8087:8080
       - 8443:8443
@@ -40,7 +41,31 @@ services:
       - postgres
     networks:
       - dev_net
-    command: start-dev
+    command: >
+      start-dev 
+      --import-realm 
+      --features=scripts 
+      -Dkeycloak.profile.feature.upload_scripts=enabled
+
+  keycloak-init:
+    image: node:20-alpine
+    depends_on:
+      - keycloak
+    entrypoint: [ "sh", "-c" ]
+    command: |
+      "
+      apk add --no-cache curl jq >/dev/null;
+      echo '⏳ Aguardando Keycloak ficar disponível...';
+      until curl -s http://keycloak:8080/realms/master; do
+        sleep 2;
+      done;
+      echo '✅ Keycloak está pronto, executando script...';
+      sh /scripts/post-start.sh;
+      "
+    volumes:
+      - ./scripts:/scripts:ro
+    networks:
+      - dev_net
 
 networks:
   dev_net:
