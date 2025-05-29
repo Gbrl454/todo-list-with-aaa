@@ -1,9 +1,11 @@
 package br.unifor.resource
 
+import br.unifor.dto.TaskDTO
 import br.unifor.form.CreateTaskForm
 import br.unifor.service.TaskService
 import br.unifor.utils.getLoggedUser
 import jakarta.inject.Inject
+import jakarta.transaction.Transactional
 import jakarta.validation.Valid
 import jakarta.ws.rs.*
 import org.eclipse.microprofile.jwt.JsonWebToken
@@ -22,7 +24,8 @@ class TaskResource(
         taskService.getTaskByHashTask(hashTask = hashTask)
 
     @POST
-    fun createTask(@Valid form: CreateTaskForm) = taskService.createTask(
+    @Transactional
+    fun createTask(@Valid form: CreateTaskForm): TaskDTO = taskService.createTask(
         form = form, //
         loggedUser = jwt.getLoggedUser(), //
     )
