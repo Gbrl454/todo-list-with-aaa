@@ -179,6 +179,7 @@ class AuthService {
                     this.email = form.email
                     this.isEnabled = true
                     this.isEmailVerified = true
+                    this.groups = listOf("TodoGroup")
                 }) //
             .let { response ->
                 if (response.status != 201) throw RegisterKcException()

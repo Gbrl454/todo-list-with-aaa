@@ -28,9 +28,6 @@ class TaskResource(
     )
 
     @PUT
-    fun editTask(): Nothing = taskService.editTask()
-
-    @PUT
     @Path("/{hashTask}")
     fun editTask(@PathParam("hashTask") hashTask: String): Nothing = taskService.editTask(hashTask = hashTask)
 
