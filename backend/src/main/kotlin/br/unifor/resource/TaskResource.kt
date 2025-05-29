@@ -16,7 +16,10 @@ class TaskResource(
     @Inject var taskService: TaskService, //
 ) {
     @GET
-    fun listTasks(): Nothing = taskService.listTasks()
+    fun listTasks(@QueryParam("search") search: String? = null): List<TaskDTO> = taskService.listTasks(
+        search = search, //
+        loggedUser = jwt.getLoggedUser(), //
+    )
 
     @GET
     @Path("/{hashTask}")

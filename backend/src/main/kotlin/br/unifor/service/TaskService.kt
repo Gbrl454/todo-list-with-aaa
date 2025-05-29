@@ -8,7 +8,22 @@ import jakarta.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
 class TaskService {
-    fun listTasks(): Nothing = TODO()
+    fun listTasks(
+        search: String?, //
+        loggedUser: User, //
+    ): List<TaskDTO> = (search?.replace(" ", "") //
+        ?.split("") //
+        ?.joinToString(separator = "%") //
+        ?.uppercase() ?: "%%") //
+        .let { filter ->
+            Task.list("userOwner.id = ${loggedUser.id} AND isActive = true AND UPPER(nmTask) LIKE '$filter'") //
+                .also { println() }.map { TaskDTO(it) } //
+                .sortedWith(compareBy<TaskDTO> { it.wasDone } //
+                    .thenBy { it.dtDeadline } //
+                    .thenByDescending { it.dtDo } //
+                    .thenBy { it.nmTask } //
+                )
+        }
 
     fun getTaskByHashTask(hashTask: String): Nothing = TODO()
 
@@ -22,8 +37,6 @@ class TaskService {
         this.dtDeadline = form.dtDeadline
         this.generateHashAndPersist(userOwner = loggedUser)
     }.let { TaskDTO(it) }
-
-    fun editTask(): Nothing = TODO()
 
     fun editTask(hashTask: String): Nothing = TODO()
 
