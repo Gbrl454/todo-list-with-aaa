@@ -78,7 +78,6 @@ class Task(
     @Column(
         name = "IS_ACTIVE", //
         nullable = false, //
-        updatable = false, //
     ) var isActive: Boolean, //
 ) : GenericEntity() {
     companion object : PanacheCompanion<Task> {

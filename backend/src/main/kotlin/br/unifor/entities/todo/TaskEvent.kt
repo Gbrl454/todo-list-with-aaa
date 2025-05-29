@@ -48,7 +48,67 @@ class TaskEvent(
         updatable = false, //
     ) var dtOccurrence: LocalDateTime, //
 ) : GenericEntity() {
-    companion object : PanacheCompanion<TaskEvent>
+    companion object : PanacheCompanion<TaskEvent> {
+        private fun makeEvent(
+            task: Task, //
+            userOperator: User, //
+            idEvent: Long, //
+        ): TaskEvent = TaskEvent().apply {
+            this.event = Event.findEventByIdOrException(idEventDomain = 200, idEventFaixa = idEvent)
+            this.task = task
+            this.userOperator = userOperator
+        }
+
+        /**Atividade criada*/
+        fun create(
+            task: Task, //
+            userOperator: User, //
+        ): TaskEvent = makeEvent(
+            task = task, //
+            userOperator = userOperator, //
+            idEvent = 1, //
+        )
+
+        /**Atividade desativada*/
+        fun disable(
+            task: Task, //
+            userOperator: User, //
+        ): TaskEvent = makeEvent(
+            task = task, //
+            userOperator = userOperator, //
+            idEvent = 2, //
+        )
+
+        /**Atividade realizada*/
+        fun complete(
+            task: Task, //
+            userOperator: User, //
+        ): TaskEvent = makeEvent(
+            task = task, //
+            userOperator = userOperator, //
+            idEvent = 3, //
+        )
+
+        /**Atividade tornada pública*/
+        fun turnPublic(
+            task: Task, //
+            userOperator: User, //
+        ): TaskEvent = makeEvent(
+            task = task, //
+            userOperator = userOperator, //
+            idEvent = 4, //
+        )
+
+        /**Atividade tornada privada*/
+        fun turnPrivate(
+            task: Task, //
+            userOperator: User, //
+        ): TaskEvent = makeEvent(
+            task = task, //
+            userOperator = userOperator, //
+            idEvent = 5, //
+        )
+    }
 
     constructor() : this(
         id = 0, //

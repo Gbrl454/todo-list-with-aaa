@@ -24,7 +24,7 @@ class TaskResource(
 
     @GET
     @Path("/{hashTask}")
-    fun getTaskByHashTask(@PathParam("hashTask") hashTask: String): TaskDetailDTO = taskService.getTaskByHashTask(
+    fun getTask(@PathParam("hashTask") hashTask: String): TaskDetailDTO = taskService.getTask(
         hashTask = hashTask, //
         loggedUser = jwt.getLoggedUser(), //
     )
@@ -38,10 +38,17 @@ class TaskResource(
 
     @PUT
     @Path("/{hashTask}")
-    fun editTask(@PathParam("hashTask") hashTask: String): Nothing = taskService.editTask(hashTask = hashTask)
+    fun editTask(@PathParam("hashTask") hashTask: String): TaskDetailDTO = taskService.editTask(
+        hashTask = hashTask, //
+        loggedUser = jwt.getLoggedUser(), //
+    )
 
     @DELETE
+    @Transactional
     @Path("/{hashTask}")
-    fun removeTask(@PathParam("hashTask") hashTask: String): Nothing = taskService.removeTask(hashTask = hashTask)
+    fun disableTask(@PathParam("hashTask") hashTask: String): TaskDetailDTO = taskService.disableTask(
+        hashTask = hashTask, //
+        loggedUser = jwt.getLoggedUser(), //
+    )
 }
 

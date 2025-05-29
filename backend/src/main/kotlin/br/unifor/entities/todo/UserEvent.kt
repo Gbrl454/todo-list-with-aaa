@@ -49,20 +49,35 @@ class UserEvent(
     ) var dtOccurrence: LocalDateTime, //
 ) : GenericEntity() {
     companion object : PanacheCompanion<UserEvent> {
-        /**Usuário criado*/
-        fun create(user: User, userOperator: User): UserEvent = UserEvent().apply {
-            this.event = Event.findEventByIdOrException(idEvent = 1)
+        private fun makeEvent(
+            user: User, //
+            userOperator: User, //
+            idEvent: Long, //
+        ): UserEvent = UserEvent().apply {
+            this.event = Event.findEventByIdOrException(idEventDomain = 100, idEventFaixa = idEvent)
             this.user = user
             this.userOperator = userOperator
         }
+
+        /**Usuário criado*/
+        fun create(
+            user: User, //
+            userOperator: User, //
+        ): UserEvent = makeEvent(
+            user = user, //
+            userOperator = userOperator, //
+            idEvent = 1L, //
+        )
 
         /**Usuário desativado*/
-        fun disable(user: User, userOperator: User): UserEvent = UserEvent().apply {
-            this.event = Event.findEventByIdOrException(idEvent = 2)
-            this.user = user
-            this.userOperator = userOperator
-        }
-
+        fun disable(
+            user: User, //
+            userOperator: User, //
+        ): UserEvent = makeEvent(
+            user = user, //
+            userOperator = userOperator, //
+            idEvent = 2L, //
+        )
     }
 
     constructor() : this(

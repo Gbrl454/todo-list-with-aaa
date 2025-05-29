@@ -1,7 +1,7 @@
 package br.unifor.exception
 
-class EventNotFoundException(idEvent: Long) : APIException(
+class EventNotFoundException(idEventFaixa: Long) : APIException(
     title = "Evento não encontrado", //
-    message = "Evento $idEvent não encontrado.", //
+    message = "Evento $idEventFaixa não encontrado.", //
     status = 404, //
 )

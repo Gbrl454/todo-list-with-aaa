@@ -17,6 +17,13 @@ class Event(
         updatable = false, //
     ) var id: Long, //
 
+    /**Faixa do evento*/
+    @Column(
+        name = "ID_EVENT_FAIXA", //
+        nullable = false, //
+        updatable = false, //
+    ) var idEventFaixa: Long, //
+
     /**Domínio do evento*/
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(
         name = "ID_EVENT_DOMAIN", //
@@ -33,12 +40,16 @@ class Event(
     ) var nmEvent: String, //
 ) : GenericEntity() {
     companion object : PanacheCompanion<Event> {
-        fun findEventByIdOrException(idEvent: Long): Event = Event.findById(idEvent) //
-            ?: throw EventNotFoundException(idEvent = idEvent)
+        fun findEventByIdOrException(
+            idEventDomain: Long, //
+            idEventFaixa: Long, //
+        ): Event = Event.find("eventDomain.id = $idEventDomain AND idEventFaixa = $idEventFaixa").firstResult() //
+            ?: throw EventNotFoundException(idEventFaixa = idEventFaixa)
     }
 
     constructor() : this(
         id = 0, //
+        idEventFaixa = 0, //
         eventDomain = EventDomain(), //
         nmEvent = "", //
     )
