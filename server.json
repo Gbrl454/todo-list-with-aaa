@@ -1,0 +1,65 @@
+{
+  "task": [
+    {
+      "id": "2",
+      "user_id": "11",
+      "name": "prova teste visivel 1",
+      "description": "prova dia 20/11",
+      "visibilite": "public",
+      "limitDate": "26/11",
+      "completionDate": "",
+      "create_at": "",
+      "taskIsActive": false,
+      "tasksIsActive": false
+    },
+    {
+      "id": "4",
+      "user_id": "11",
+      "name": "prova teste",
+      "description": "prova dia 20/11",
+      "visibilite": "private",
+      "limitDate": "26/11",
+      "completionDate": "",
+      "create_at": "",
+      "taskIsActive": true
+    },
+    {
+      "id": "7556",
+      "name": "rafael",
+      "description": "dadad",
+      "visibilite": "public",
+      "limitDate": "1999-11-24"
+    }
+  ],
+  "login": [
+    {
+      "username": "rafael",
+      "password": "123",
+      "token": 12,
+      "id": "1090"
+    }
+  ],
+  "register": [
+    {
+      "id": "6398",
+      "username": "ra",
+      "fullname": "ra",
+      "user_email": "ra",
+      "password": "ra"
+    },
+    {
+      "id": "1da1",
+      "username": "rafael",
+      "fullname": "rafael",
+      "user_email": "rafa",
+      "password": "123"
+    },
+    {
+      "id": "15b1",
+      "username": "raf",
+      "fullname": "ara",
+      "user_email": "ra",
+      "password": "123"
+    }
+  ]
+}
