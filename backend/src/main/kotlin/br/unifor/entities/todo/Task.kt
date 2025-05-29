@@ -81,7 +81,9 @@ class Task(
         updatable = false, //
     ) var isActive: Boolean, //
 ) : GenericEntity() {
-    companion object : PanacheCompanion<Task>
+    companion object : PanacheCompanion<Task> {
+        fun findByHash(hashTask: String): Task? = Task.find("hashTask = '$hashTask'").firstResult()
+    }
 
     constructor() : this(
         id = 0, //

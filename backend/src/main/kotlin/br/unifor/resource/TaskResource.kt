@@ -1,6 +1,7 @@
 package br.unifor.resource
 
 import br.unifor.dto.TaskDTO
+import br.unifor.dto.TaskDetailDTO
 import br.unifor.form.CreateTaskForm
 import br.unifor.service.TaskService
 import br.unifor.utils.getLoggedUser
@@ -23,8 +24,10 @@ class TaskResource(
 
     @GET
     @Path("/{hashTask}")
-    fun getTaskByHashTask(@PathParam("hashTask") hashTask: String): Nothing =
-        taskService.getTaskByHashTask(hashTask = hashTask)
+    fun getTaskByHashTask(@PathParam("hashTask") hashTask: String): TaskDetailDTO = taskService.getTaskByHashTask(
+        hashTask = hashTask, //
+        loggedUser = jwt.getLoggedUser(), //
+    )
 
     @POST
     @Transactional
