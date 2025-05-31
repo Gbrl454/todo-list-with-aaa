@@ -2,8 +2,8 @@
 import { createContext } from "react";
 
 interface Task {
-    id: number,
-    user_id: number,
+    id: string,
+    user_id: string,
     name: string,
     description: string,
     visibilite: string,
@@ -22,15 +22,17 @@ interface TaskInput {
 
 interface TasksContextType {
   tasks: Task[];
+  viewTaskData: Task | null;
   fetchTasks: (query?: string) => void;
-  DeleteTask: (id:number) => Promise<void>
-  viewTask: (id:number) => Promise<void>
-  CheckTask: (id:number) => Promise<void>
+  DeleteTask: (id:string) => Promise<void>
+  viewTask: (id:string) => Promise<void>
+  CheckTask: (id:string) => Promise<void>
   CreateTask: (task:TaskInput) => Promise<void>
 }
 
 export const TasksContext = createContext<TasksContextType>({
   tasks: [],
+  viewTaskData: null,
   fetchTasks: async () => {},
   DeleteTask: async () => {},
   viewTask: async () => {},

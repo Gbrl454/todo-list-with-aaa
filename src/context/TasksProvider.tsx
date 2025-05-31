@@ -4,8 +4,8 @@ import { TasksContext } from "./TasksContext";
 
 
 interface Tasks {
-    id: number,
-    user_id: number,
+    id: string,
+    user_id: string,
     name: string,
     description: string,
     visibilite: string,
@@ -26,8 +26,10 @@ interface TasksProviderProps {
     children: ReactNode
 }
 
+
 export function TasksProvider({ children }: TasksProviderProps) {
     const [tasks, setTasks] = useState<Tasks[]>([])
+    const [viewTaskData, setviewTaskData] =  useState<Tasks>()
 
     async function fetchTasks(query: string = "") {
         try {
@@ -60,7 +62,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
         }
     }
 
-    const DeleteTask = async (id: number) => {
+    const DeleteTask = async (id: string) => {
         if (window.confirm('tem certeza que deseja deletar a Task')) {
             try {
                 await api.delete(`/task/${id}`)
@@ -71,9 +73,11 @@ export function TasksProvider({ children }: TasksProviderProps) {
         }
     }
 
-    const viewTask = async (id: number) => {
+    const viewTask = async (id: string) => {
         try {
-            await api.get(`/tas/${id}`)
+            const view = await api.get(`/task/${id}`)
+            setviewTaskData(view.data)
+            console.log(view.data)
         } catch (error) {
             console.error(error)
         }
@@ -83,7 +87,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
         fetchTasks();
     }, [])
 
-    const CheckTask = async (id: number): Promise<void> => {
+    const CheckTask = async (id: string): Promise<void> => {
 
         try {
             const currentTask = tasks.find(task => task.id === id);
@@ -109,7 +113,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
     }
 
     return (
-        <TasksContext.Provider value={{ tasks, fetchTasks, DeleteTask, viewTask, CheckTask, CreateTask }}>
+        <TasksContext.Provider value={{ tasks, fetchTasks, DeleteTask, viewTask, CheckTask, CreateTask, viewTaskData }}>
             {children}
         </TasksContext.Provider>
     )

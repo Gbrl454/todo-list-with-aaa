@@ -27,12 +27,10 @@ export function App() {
                   <PrivateRoute>
                     <HomePage />
                   </PrivateRoute>} />
-
-                  <Route path="/task/:hashTask" element={
-                    <PrivateRoute>
-                      <ViewPage />
-                    </PrivateRoute>} />
-
+                <Route path="/task/:id" element={
+                  <PrivateRoute>
+                    <ViewPage />
+                  </PrivateRoute>} />
               </Routes>
             </BrowserRouter>
           </UserProvider>

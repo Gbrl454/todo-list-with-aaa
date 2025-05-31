@@ -40,7 +40,7 @@ export function List() {
                             <p className="paragraph" style={{ textDecoration: task.taskIsActive ? 'none' : 'line-through', color: task.taskIsActive ? 'color: ${props =>props.theme["gray-300"}' : '${props =>props.theme["gray-100"}' }}>
                                 {task.name}
                             </p>
-                            <button onClick={async() => {viewTask(task.id); navigate(`/task/${task.id}`);} }>
+                            <button onClick={async() => {viewTask(task.id); navigate(`/task/${task.id}`);}}>
                                 <CaretRight size={20} color="#a9a9a9" />
                             </button>
                             <button onClick={() => DeleteTask(task.id)}>
