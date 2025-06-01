@@ -9,3 +9,6 @@ backend/.quarkus/cli/plugins/*
 backend/.certs/*
 backend/.kotlin/*
 backend/gradle/*
+keycloak_data/*
+postgres_data/*
+frontend/node_modules/*
