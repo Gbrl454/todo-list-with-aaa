@@ -5,11 +5,14 @@ import br.unifor.dto.TaskDetailDTO
 import br.unifor.entities.todo.Task
 import br.unifor.entities.todo.TaskEvent
 import br.unifor.entities.todo.User
-import br.unifor.exception.TaskAlreadyDisabledException
-import br.unifor.exception.TaskNotFoundException
-import br.unifor.exception.TaskNotOwnedLoggedUserException
+import br.unifor.exception.*
+import br.unifor.extensions.testDeadlineDateLessCurrentDate
+import br.unifor.extensions.updateIfChanged
 import br.unifor.form.CreateTaskForm
+import br.unifor.form.EditTaskForm
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.transaction.Transactional
+import java.time.LocalDateTime
 
 @ApplicationScoped
 class TaskService {
@@ -54,26 +57,116 @@ class TaskService {
     fun createTask(
         form: CreateTaskForm, //
         loggedUser: User, //
-    ): TaskDTO = Task().apply {
+    ): Task = Task().apply {
         this.nmTask = form.nmTask
         this.dsTask = form.dsTask
         this.isPrivateTask = form.isPrivateTask
         this.dtDeadline = form.dtDeadline
         this.generateHashAndPersist(userOwner = loggedUser)
-        // TODO criar evento
-    }.let { TaskDTO(it) }
+
+        TaskEvent.create(
+            task = this, //
+            userOperator = loggedUser, //
+        ).persist()
+    }
+
+    private fun recreateTask(
+        task: Task, //
+        form: EditTaskForm, //
+        loggedUser: User, //
+    ): Task {
+        disableTask(
+            hashTask = task.hashTask, //
+            loggedUser = loggedUser, //
+        )
+
+        return createTask(
+            form = CreateTaskForm(
+                nmTask = form.nmTask ?: task.nmTask, //
+                dsTask = form.dsTask ?: task.dsTask, //
+                isPrivateTask = form.isPrivateTask ?: task.isPrivateTask, //
+                dtDeadline = form.dtDeadline ?: task.dtDeadline, //
+            ), //
+            loggedUser = loggedUser, //
+        )
+    }
 
     fun editTask(
+        hashTask: String, //
+        form: EditTaskForm, //
+        loggedUser: User, //
+    ): TaskDetailDTO = getTaskByHashTask(
+        hashTask = hashTask, //
+        loggedUser = loggedUser, //
+    ).let { task ->
+        task.dtDo?.let { throw TaskAlreadyCompletedException(hashTask = hashTask, dtDo = it) }
+
+        TaskDetailDTO(
+            task = if (form.nmTask != null || form.dsTask != null) {
+            recreateTask(
+                task = task, //
+                form = form, //
+                loggedUser = loggedUser, //
+            )
+        } else {
+            var edited = false
+
+            edited = updateIfChanged(
+                current = { task.isPrivateTask },
+                update = { task.isPrivateTask = it },
+                newValue = form.isPrivateTask,
+                onChange = {
+                    form.isPrivateTask?.let { isPrivate ->
+                        val event = if (isPrivate) TaskEvent.turnPrivate(task, loggedUser)
+                        else TaskEvent.turnPublic(task, loggedUser)
+                        event.persist()
+                    }
+                }) || edited
+
+            edited = form.dtDeadline?.let { newDeadline ->
+                task.dtDeadline.testDeadlineDateLessCurrentDate(date = newDeadline)
+                updateIfChanged(
+                    current = { task.dtDeadline }, //
+                    update = { task.dtDeadline = it }, //
+                    newValue = newDeadline, //
+                )
+            } == true || edited
+
+            if (!edited) throw TaskInformationHasChangedException(hashTask = hashTask)
+            task.also { it.persist() }
+        })
+    }
+
+    @Transactional
+    fun completeTask(
         hashTask: String, //
         loggedUser: User, //
     ): TaskDetailDTO = getTaskByHashTask(
         hashTask = hashTask, //
         loggedUser = loggedUser, //
-    ).let {
-        TODO("Realizar edições")
-        TaskDetailDTO(task = it)
+    ).let { task ->
+
+        task.dtDo?.let {
+            throw TaskAlreadyCompletedException(
+                hashTask = hashTask, //
+                dtDo = it, //
+            )
+        }
+
+        task.apply {
+            this.dtDo = LocalDateTime.now()
+            this.persist()
+        }
+
+        TaskEvent.complete(
+            task = task, //
+            userOperator = loggedUser, //
+        ).persist()
+
+        TaskDetailDTO(task = task)
     }
 
+    @Transactional
     fun disableTask(
         hashTask: String, //
         loggedUser: User, //

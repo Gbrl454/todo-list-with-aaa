@@ -1,6 +1,7 @@
 package br.unifor.dto
 
 import br.unifor.entities.todo.Task
+import br.unifor.extensions.isComplete
 import br.unifor.serialization.LocalDateTimeJson
 import kotlinx.serialization.Serializable
 
@@ -16,7 +17,7 @@ data class TaskDTO(
         hashTask = task.hashTask, //
         nmTask = task.nmTask, //
         dtDeadline = task.dtDeadline, //
-        dtDo = task.dtDo, //
-        wasDone = task.dtDo != null, //
+        dtDo = task.isComplete().first, //
+        wasDone = task.isComplete().second, //
     )
 }

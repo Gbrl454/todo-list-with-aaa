@@ -3,6 +3,7 @@ package br.unifor.resource
 import br.unifor.dto.TaskDTO
 import br.unifor.dto.TaskDetailDTO
 import br.unifor.form.CreateTaskForm
+import br.unifor.form.EditTaskForm
 import br.unifor.service.TaskService
 import br.unifor.utils.getLoggedUser
 import jakarta.inject.Inject
@@ -34,11 +35,26 @@ class TaskResource(
     fun createTask(@Valid form: CreateTaskForm): TaskDTO = taskService.createTask(
         form = form, //
         loggedUser = jwt.getLoggedUser(), //
+    ).let { TaskDTO(it) }
+
+    @PUT
+    @Transactional
+    @Path("/{hashTask}")
+    fun editTask(
+        @PathParam("hashTask") hashTask: String,
+        form: EditTaskForm, //
+    ): TaskDetailDTO = taskService.editTask(
+        hashTask = hashTask, //
+        form = form, //
+        loggedUser = jwt.getLoggedUser(), //
     )
 
     @PUT
-    @Path("/{hashTask}")
-    fun editTask(@PathParam("hashTask") hashTask: String): TaskDetailDTO = taskService.editTask(
+    @Transactional
+    @Path("/{hashTask}/do")
+    fun completeTask(
+        @PathParam("hashTask") hashTask: String,
+    ): TaskDetailDTO = taskService.completeTask(
         hashTask = hashTask, //
         loggedUser = jwt.getLoggedUser(), //
     )

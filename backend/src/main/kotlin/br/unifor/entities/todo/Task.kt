@@ -37,21 +37,18 @@ class Task(
     @Column(
         name = "NM_TASK", //
         nullable = false, //
-        updatable = false, //
     ) var nmTask: String, //
 
     /**Descrição da atividade*/
     @Column(
         name = "DS_TASK", //
         nullable = false, //
-        updatable = false, //
     ) var dsTask: String, //
 
     /**Indica se a atividade é privada*/
     @Column(
         name = "IS_PRIVATE_TASK", //
         nullable = false, //
-        updatable = false, //
     ) var isPrivateTask: Boolean, //
 
     /**Data limite da atividade*/
@@ -64,7 +61,6 @@ class Task(
     /**Data de realização da atividade*/
     @Column(
         name = "DT_DO", //
-        updatable = false, //
     ) var dtDo: LocalDateTime?, //
 
     /**Data de inclusão do usuário*/
@@ -105,8 +101,8 @@ class Task(
             .withoutPadding() //
             .encodeToString(
                 MessageDigest.getInstance("SHA-256") //
-                    .digest("${System.currentTimeMillis()}${userOwner.username}${userOwner.dtInclusion}".toByteArray())
-            ).take(45)
+                    .digest("${System.currentTimeMillis()}${this.nmTask}${userOwner.username}${this.dsTask}".toByteArray())
+            ).take(99)
         this.persist()
     }
 }
