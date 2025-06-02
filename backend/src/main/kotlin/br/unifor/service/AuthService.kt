@@ -85,9 +85,7 @@ class AuthService {
         UserEvent.create(
             user = user, //
             userOperator = user, //
-        ).apply {
-            this.persist()
-        }
+        ).apply { this.persist() }
 
         registerUserInKc(
             form = form, //
@@ -116,29 +114,34 @@ class AuthService {
                             username = form.username, //
                             password = form.password, //
                         )
-                    }.getOrElse {
-                        throw APIException(
-                            title = "Falha no logar", //
-                            message = "Erro ao tentar realizar login.", //
-                            status = 400, //
-                        )
-                    }.let { UserTokenDTO(kcUserToken = it) }
+                    }.getOrElse { throw TryingLoginException() } //
+                        .let { UserTokenDTO(kcUserToken = it) }
+                } ?: throw UserNotActiveException(username = form.username)
+        } ?: throw UserNotFoundException(username = form.username)
 
-                } //
-                ?: throw UserNotActiveException(username = form.username)
-
-        } //
-        ?: throw UserNotFoundException(username = form.username)
+    @Transactional
+    fun refreshToken(
+        refreshToken: String, //
+        loggedUser: User, //
+    ): UserTokenDTO = runCatching {
+        apiKC.refreshToken(
+            realm = kcRealm, //
+            client = kcPublicClient, //
+            refreshToken = refreshToken, //
+            grant = "refresh_token", //
+        )
+    }.getOrElse { throw TryingLoginException() } //
+        .let { UserTokenDTO(kcUserToken = it) }
 
     fun logout(loggedUser: User, count: Int = 1) {
         val kc: Keycloak = buildKc()
-        val kcUser: UserRepresentation = kc.searchUserInkcByUsername(username = loggedUser.username)
-
-        runCatching {
-            kc.realm(kcRealm).users().get(kcUser.id).logout()
-        }.onFailure {
-            if (count == 3) throw APIException(message = "Erro ao encerrar sessão.", status = 400)
-            else logout(loggedUser = loggedUser, count = count + 1)
+        kc.searchUserInkcByUsername(username = loggedUser.username).let { kcUser: UserRepresentation ->
+            runCatching {
+                kc.realm(kcRealm).users().get(kcUser.id).logout()
+            }.onFailure {
+                if (count == 3) throw CloseSessionException()
+                else logout(loggedUser = loggedUser, count = count + 1)
+            }
         }
         kc.close()
     }
@@ -149,17 +152,16 @@ class AuthService {
         username: String, //
     ) {
         val kc: Keycloak = buildKc()
-        val kcUser: UserRepresentation = kc.searchUserInkcByUsername(username = username)
+        kc.searchUserInkcByUsername(username = username).let { kcUser: UserRepresentation ->
+                disableUserInDb(
+                    loggedUser = loggedUser, //
+                    username = username, //
+                )
 
-        disableUserInDb(
-            loggedUser = loggedUser, //
-            username = username, //
-        )
-
-        val userResource = kc.realm(kcRealm).users().get(kcUser.id)
-        kcUser.isEnabled = false
-        userResource.update(kcUser)
-
+                val userResource = kc.realm(kcRealm).users().get(kcUser.id)
+                kcUser.isEnabled = false
+                userResource.update(kcUser)
+            }
         kc.close()
     }
 

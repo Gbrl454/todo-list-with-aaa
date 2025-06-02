@@ -1,6 +1,5 @@
 package br.unifor.serialization
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -11,14 +10,11 @@ import kotlinx.serialization.encoding.Encoder
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-
-@OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = LocalDate::class)
 object DateSerializer : KSerializer<LocalDate> {
     private val formatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-    override val descriptor: SerialDescriptor =
-            PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: LocalDate) {
         encoder.encodeString(value.format(formatter))

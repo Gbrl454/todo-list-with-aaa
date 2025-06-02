@@ -8,11 +8,7 @@ import br.unifor.utils.getLoggedUser
 import jakarta.inject.Inject
 import jakarta.transaction.Transactional
 import jakarta.validation.Valid
-import jakarta.ws.rs.DELETE
-import jakarta.ws.rs.POST
-import jakarta.ws.rs.PUT
-import jakarta.ws.rs.Path
-import jakarta.ws.rs.QueryParam
+import jakarta.ws.rs.*
 import org.eclipse.microprofile.jwt.JsonWebToken
 
 @Path("/auth")
@@ -27,11 +23,14 @@ class AuthResource(
 
     @PUT
     @Path("/refresh")
-    fun refreshToken(): Nothing = TODO()
+    fun refreshToken(@QueryParam("refresh_token") refreshToken: String): UserTokenDTO = authService.refreshToken(
+        refreshToken = refreshToken, //
+        loggedUser = jwt.getLoggedUser(), //
+    )
 
     @POST
     @Path("/login")
-    fun login(@Valid form: LoginUserForm) = authService.login(form = form)
+    fun login(@Valid form: LoginUserForm): UserTokenDTO = authService.login(form = form)
 
     @POST
     @Path("/logout")

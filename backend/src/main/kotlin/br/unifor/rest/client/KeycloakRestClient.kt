@@ -19,13 +19,24 @@ interface KeycloakRestClient {
     ): KcToken
 
     @POST
-    @Consumes(value = ["application/x-www-form-urlencoded"])
     @Path("/realms/{realm}/protocol/openid-connect/token")
+    @Consumes(value = ["application/x-www-form-urlencoded"])
     fun loginKc(
         @PathParam("realm") realm: String, //
         @FormParam("grant_type") grantType: String, //
         @FormParam("client_id") clientId: String, // //
         @FormParam("username") username: String, //
         @FormParam("password") password: String, //
+    ): KcUserToken
+
+
+    @POST
+    @Consumes(value = ["application/x-www-form-urlencoded"])
+    @Path("auth/realms/{realm}/protocol/openid-connect/token")
+    fun refreshToken(
+        @PathParam("realm") realm: String, //
+        @FormParam("client_id") client: String, //
+        @FormParam("refresh_token") refreshToken: String, //
+        @FormParam("grant_type") grant: String, //
     ): KcUserToken
 }
