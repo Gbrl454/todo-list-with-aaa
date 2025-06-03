@@ -3,7 +3,7 @@ import { Header } from "../compoents/Header/Header";
 import { useContext, useEffect } from "react";
 import { TasksContext } from "../context/TasksContext";
 import { Item, ListPage } from "../compoents/List/styles";
-import { UserContext } from "../context/UserContext";
+//import { UserContext } from "../context/UserContext";
 import { CaretLeft } from "phosphor-react";
 
 export function ViewPage() {
@@ -12,12 +12,17 @@ export function ViewPage() {
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (!id) {
-            console.error("ID não encontrado");
-            return;
-        }
-        viewTask(id);
-    }, [id, viewTask]);
+    if (!id) {
+        console.error("ID não encontrado");
+        return;
+    }
+
+    viewTask(id).catch((error) => {
+        console.error("Erro ao buscar tarefa:", error);
+        window.alert("sem autorização")
+        navigate('/task');
+    });
+}, [id, viewTask, navigate]);
 
     if (!viewTaskData) {
         return (
@@ -29,9 +34,9 @@ export function ViewPage() {
             </>
         );
     }
-    const context = useContext(UserContext)
-    const { currentUser, logout } = context;
-
+ //   const context = useContext(UserContext)
+ //   const { currentUser, logout } = context;
+ // logica de ver user
     return (
         <div>
             <Header />

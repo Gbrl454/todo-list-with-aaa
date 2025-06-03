@@ -8,6 +8,7 @@ import {
 import { api } from "../lib/axios";
 import { TasksContext } from "./TasksContext";
 import Cookies from "js-cookie";
+import { useNavigate } from "react-router-dom";
 
 interface Tasks {
     hashTask: string;
@@ -189,8 +190,11 @@ export function TasksProvider({ children }: TasksProviderProps) {
         }
     }, []);
 
+    
     const viewTask = useCallback(
         async (hashTask: string) => {
+            
+            
             try {
                 // Pega o token dentro do callback
                 const tokenJson = Cookies.get("X-TOKEN-TODO");
@@ -215,6 +219,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
                 console.log(taskFormatted);
             } catch (error) {
                 console.error("Erro ao visualizar tarefa:", error);
+                throw error; 
             }
         },
         [setViewTaskData] // só depende da função de setar estado
