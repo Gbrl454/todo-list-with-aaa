@@ -12,3 +12,5 @@ backend/gradle/*
 keycloak_data/*
 postgres_data/*
 frontend/node_modules/*
+node_modules/.package-lock.json
+backend/src/main/resources/application-local.properties
