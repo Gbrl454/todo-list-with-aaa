@@ -23,27 +23,46 @@ export function RegisterBody() {
 
     const handledSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const trimmedUsername = username.trim();
+        const trimmedFullname = fullname.trim();
+        const trimmedEmail = user_email.trim();
+        const trimmedPassword = password.trim();
+        const trimmedConfirmPassword = confirmpassword.trim();
+
+        if (trimmedPassword !== trimmedConfirmPassword) {
+            window.alert('Senha não confere');
+            setPassword('');
+            setConfirmpassword('');
+            return;
+        }
+
         try {
-            console.log({ username, fullname, user_email, password })
+            await createUser({
+                username: trimmedUsername,
+                fullname: trimmedFullname,
+                email: trimmedEmail,
+                password: trimmedPassword,
+                passwordConfirmation: trimmedConfirmPassword
+            });
 
-            if (confirmpassword != password) return (window.alert('senha não confere'), setPassword(''), setConfirmpassword(''), null)
-
-            createUser({ username, fullname, user_email, password })
-
-            setUserName('')
-            setFullname('')
-            setUser_email('')
-            setPassword('')
+            // Limpa os campos após o cadastro
+            setUserName('');
+            setFullname('');
+            setUser_email('');
+            setPassword('');
+            setConfirmpassword('');
         } catch (error: any) {
             if (error.response) {
                 console.error('Erro de validação:', error.response.data);
-                alert(JSON.stringify(error.response.data, null, 2)); // mostra os problemas
+                alert(JSON.stringify(error.response.data, null, 2));
             } else {
                 console.error(error);
                 alert('Erro inesperado ao cadastrar médico.');
             }
         }
     }
+
 
 
     return (

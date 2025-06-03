@@ -24,11 +24,32 @@ export function ViewPage() {
             <Header />
             <ListPage>
                 <Item>
-                    <p>{viewTaskData?.name}</p>
-                    <p>{viewTaskData?.description}</p>
-                    <p>{viewTaskData?.user_id}</p>
-                    <p>{viewTaskData?.taskIsActive}</p>
+                    <p>Task: {viewTaskData?.name}   -  Usuário:{viewTaskData?.user_id}</p>
                 </Item>
+                <Item style={{height:"auto"}}>
+                    <textarea
+                        className="description"
+                        readOnly
+                        value={viewTaskData?.description || ""}
+                        rows={1}
+                        onChange={() => { }} // impede warnings, mesmo que não seja usado
+                        style={{
+                            height: "auto",
+                            overflow: "hidden",
+                            resize: "none",
+                        }}
+                        ref={(textarea) => {
+                            if (textarea) {
+                                textarea.style.height = "auto";
+                                textarea.style.height = `${textarea.scrollHeight}px`;
+                            }
+                        }}
+                    />
+                </Item>
+                <Item >
+                    <p>{viewTaskData?.create_at}    -   {viewTaskData?.taskIsActive}</p>
+                </Item>
+
             </ListPage>
         </div>
     )
