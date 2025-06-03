@@ -89,6 +89,21 @@ services:
     networks:
       - dev_net
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react_frontend
+    ports:
+      - "8055:5174"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - dev_net
+    depends_on:
+      - backend
+
 networks:
   dev_net:
     driver: bridge

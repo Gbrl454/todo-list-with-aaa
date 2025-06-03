@@ -1,27 +1,36 @@
-import { useContext, useState } from "react"
-import { TasksContext } from "../../context/TasksContext"
+import { useContext, useRef, useState } from "react";
+import { TasksContext } from "../../context/TasksContext";
 import { DialogClose, DialogPortal, DialogTitle } from "@radix-ui/react-dialog";
 import { Content, CreateButton, Overlay } from "./styles";
 
 interface CreateTaskProps {
-    onSuccess: () => void
+    onSuccess: () => void;
 }
 
 export function CreateTask({ onSuccess }: CreateTaskProps) {
-    const { CreateTask } = useContext(TasksContext)
+    const { CreateTask } = useContext(TasksContext);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [visibilite, setVisibilite] = useState("public");
     const [limitDate, setLimitDate] = useState("");
-
-
+    const closeRef = useRef<HTMLButtonElement>(null);
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         try {
-            await CreateTask({ name, description, visibilite, limitDate })
+            await CreateTask({
+                nmTask: name,
+                dsTask: description,
+                isPrivateTask: visibilite === "private",
+                dtDeadline: limitDate,
+            });
             onSuccess();
+            closeRef.current?.click();
+            setName('');
+            setDescription('')
+            setVisibilite('')
+            setLimitDate('')
         } catch (error) {
-            console.error(error)
+            console.error(error);
         }
     }
 
@@ -31,8 +40,10 @@ export function CreateTask({ onSuccess }: CreateTaskProps) {
             <Content>
                 <DialogTitle>Registrar Task</DialogTitle>
 
-
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <form
+                    onSubmit={handleSubmit}
+                    style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+                >
                     <input
                         type="text"
                         placeholder="Nome da tarefa"
@@ -53,11 +64,14 @@ export function CreateTask({ onSuccess }: CreateTaskProps) {
                         type="date"
                         value={limitDate}
                         onChange={(e) => setLimitDate(e.target.value)}
+                        required
                     />
-                    <CreateButton type="submit" className="CreateTaskButton">Criar Tarefa</CreateButton>
+                    <CreateButton type="submit" className="CreateTaskButton">
+                        Criar Tarefa
+                    </CreateButton>
                 </form>
-                <DialogClose className="closeButton" />
+                <DialogClose ref={closeRef} className="closeButton"  />
             </Content>
         </DialogPortal>
-    )
+    );
 }

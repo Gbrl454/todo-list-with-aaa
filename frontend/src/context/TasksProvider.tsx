@@ -1,120 +1,287 @@
-import { useEffect, useState, type ReactNode } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+    useEffect,
+    useState,
+    type ReactNode,
+    useCallback,
+} from "react";
 import { api } from "../lib/axios";
 import { TasksContext } from "./TasksContext";
-
+import Cookies from "js-cookie";
+import { useNavigate } from "react-router-dom";
 
 interface Tasks {
-    id: string,
-    user_id: string,
-    name: string,
-    description: string,
-    visibilite: string,
-    limitDate: Date,
-    completionDate: Date,
-    create_at: Date,
-    taskIsActive: boolean,
-}
-
-interface TaskInput {
+    hashTask: string;
+    userId: string;
     name: string;
     description: string;
     visibilite: string;
-    limitDate: string;
+    limitDate: Date | null;
+    completionDate: Date | null;
+    create_at: string;
+    is_active: boolean;
+}
+
+interface TaskInput {
+    nmTask: string;
+    dsTask: string;
+    isPrivateTask: boolean;
+    dtDeadline: string;
 }
 
 interface TasksProviderProps {
-    children: ReactNode
+    children: ReactNode;
 }
 
+// Função que converte a resposta da API para o formato esperado no frontend
+function formatTask(task: any): Tasks {
+    return {
+        hashTask: task.hashTask,
+        userId: task.userId || "",
+        name: task.nmTask,
+        description: task.dsTask || "",
+        visibilite: task.isPrivateTask ? "private" : "public",
+        limitDate: task.dtDeadline ? new Date(task.dtDeadline) : null,
+        completionDate: task.dtDo ? new Date(task.dtDo) : null,
+        create_at: task.create_at || "",
+        is_active: !task.wasDone,
+    };
+}
+
+function getAccessToken(): string | null {
+    const tokenJson = Cookies.get("X-TOKEN-TODO");
+    const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+    return tokenObj?.accessToken ?? null;
+}
 
 export function TasksProvider({ children }: TasksProviderProps) {
-    const [tasks, setTasks] = useState<Tasks[]>([])
-    const [viewTaskData, setviewTaskData] =  useState<Tasks>()
+    const [tasks, setTasks] = useState<Tasks[]>([]);
+    const [viewTaskData, setViewTaskData] = useState<Tasks | null>(null);
 
-    async function fetchTasks(query: string = "") {
+    const fetchTasks = useCallback(async (query: string = "") => {
         try {
-            const response = await api.get("/task", { params: { q: query } })
+            const tokenJson = Cookies.get("X-TOKEN-TODO");
+            const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+            const accessToken = tokenObj?.accessToken;
+
+            if (!accessToken) {
+                console.warn("Tentativa de buscar tarefas sem autenticação.");
+                setTasks([]);
+                return;
+            }
+
+            const response = await api.get("/task", {
+                params: { q: query },
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
 
             console.log("Dados recebidos da API:", response.data);
 
-            if (Array.isArray(response.data)) {
-                setTasks(response.data)
-            } else if (Array.isArray(response.data.tasks)) {
-                setTasks(response.data.tasks)
-            } else {
-                console.error("Formato inesperado dos dados:", response.data);
-                setTasks([])  // limpa para não quebrar o app
-            }
+            const data = Array.isArray(response.data)
+                ? response.data
+                : Array.isArray(response.data?.tasks)
+                    ? response.data.tasks
+                    : [];
+
+            const tasksFormatted = data.map(formatTask);
+            setTasks(tasksFormatted);
         } catch (error) {
             console.error("Erro ao buscar tasks:", error);
-            setTasks([])
+            setTasks([]);
         }
-    }
-    const CreateTask = async ({ name, description, visibilite, limitDate }: TaskInput): Promise<void> => {
+    }, []);
+
+    const CreateTask = useCallback(async (task: TaskInput): Promise<void> => {
+        const { nmTask, dsTask, isPrivateTask = true, dtDeadline } = task;
+
+        if (!nmTask.trim()) {
+            alert("O nome da tarefa é obrigatório.");
+            return;
+        }
+
+        if (!dsTask.trim()) {
+            alert("A descrição da tarefa é obrigatória.");
+            return;
+        }
+
         try {
-            const response = await api.post("/task", { name, description, visibilite, limitDate })
+            let formattedDeadline = dtDeadline;
 
-            console.log("task Criada", response.data)
-
-
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    const DeleteTask = async (id: string) => {
-        if (window.confirm('tem certeza que deseja deletar a Task')) {
-            try {
-                await api.delete(`/task/${id}`)
-                setTasks(prev => prev.filter(task => task.id !== id))
-            } catch (error) {
-                console.error(error);
+            if (dtDeadline) {
+                if (dtDeadline.length === 10) {
+                    formattedDeadline = dtDeadline + "T23:59:59";
+                } else if (dtDeadline.length === 16) {
+                    formattedDeadline = dtDeadline + ":00";
+                }
             }
-        }
-    }
 
-    const viewTask = async (id: string) => {
-        try {
-            const view = await api.get(`/task/${id}`)
-            setviewTaskData(view.data)
-            console.log(view.data)
-        } catch (error) {
-            console.error(error)
+            const payload = {
+                nmTask,
+                dsTask,
+                isPrivateTask,
+                dtDeadline: formattedDeadline,
+            };
+
+            console.log("Dados enviados para criar tarefa:", payload);
+
+            // Pega o token do cookie
+            const tokenJson = Cookies.get("X-TOKEN-TODO");
+            const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+            const accessToken = tokenObj?.accessToken;
+
+            if (!accessToken) {
+                alert("Você precisa estar logado para criar uma tarefa.");
+                return;
+            }
+
+            const response = await api.post("/task", payload, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+
+            console.log("Resposta da API:", response.data);
+
+            if (!response.data?.id) {
+                throw new Error("Resposta inesperada da API ao criar tarefa.");
+            }
+
+            const newTask = formatTask(response.data);
+            setTasks((prev) => [...prev, newTask]);
+
+            console.log("Tarefa criada com sucesso:", newTask);
+        } catch (error: any) {
+            console.error("Erro ao criar tarefa:", {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data,
+                headers: error.response?.headers,
+            });
         }
-    }
+    }, [setTasks]);
+
+    const DeleteTask = useCallback(async (hashTask: string) => {
+        if (!window.confirm("Tem certeza que deseja deletar a Task?")) return;
+
+        try {
+            const tokenJson = Cookies.get("X-TOKEN-TODO");
+            const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+            const accessToken = tokenObj?.accessToken;
+
+            if (!accessToken) {
+                console.warn("Tentativa de visualizar tarefa sem autenticação.");
+                return;
+            }
+
+            const encodedHashTask = encodeURIComponent(hashTask);
+            const response = await api.delete(`/task/${encodedHashTask}`, {
+                withCredentials: true,
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+            setTasks((prev) => prev.filter((task) => task.hashTask !== hashTask));
+            console.log(response)
+        } catch (error) {
+            console.error("Erro ao deletar tarefa:", error);
+        }
+    }, []);
+
+    
+    const viewTask = useCallback(
+        async (hashTask: string) => {
+            
+            
+            try {
+                // Pega o token dentro do callback
+                const tokenJson = Cookies.get("X-TOKEN-TODO");
+                const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+                const accessToken = tokenObj?.accessToken;
+                
+                if (!accessToken) {
+                    console.warn("Tentativa de visualizar tarefa sem autenticação.");
+                    return;
+                }
+
+                const encodedHashTask = encodeURIComponent(hashTask);
+                const response = await api.get(`/task/${encodedHashTask}`, {
+                    withCredentials: true,
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+
+                const taskFormatted = formatTask(response.data);
+                setViewTaskData(taskFormatted);
+                console.log(taskFormatted);
+            } catch (error) {
+                console.error("Erro ao visualizar tarefa:", error);
+                throw error; 
+            }
+        },
+        [setViewTaskData] // só depende da função de setar estado
+    );
+
+    const CheckTask = useCallback(async (hashTask: string): Promise<void> => {
+        try {
+            const accessToken = getAccessToken();
+            if (!accessToken) {
+                console.warn("Tentativa de atualizar tarefa sem autenticação.");
+                return;
+            }
+
+
+            const currentTask = tasks.find((task) => task.hashTask === hashTask);
+            if (!currentTask) return;
+
+            const updateTask = !currentTask.is_active;
+            const encodedHashTask = encodeURIComponent(hashTask);
+            const response = await api.put(
+                `/task/${encodedHashTask}/do`,
+                { is_active: updateTask },
+                {
+                    withCredentials: true,
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            if (response.status === 200) {
+                setTasks((prev) =>
+                    prev.map((task) =>
+                        task.hashTask === hashTask
+                            ? { ...task, is_active: updateTask }
+                            : task
+                    )
+                );
+                console.log("Status da tarefa atualizado:", response.data);
+            }
+        } catch (error) {
+            console.error("Erro ao atualizar status da tarefa:", error);
+        }
+    }, [tasks]);
 
     useEffect(() => {
         fetchTasks();
-    }, [])
-
-    const CheckTask = async (id: string): Promise<void> => {
-
-        try {
-            const currentTask = tasks.find(task => task.id === id);
-            if (!currentTask) return;
-
-            if (currentTask.taskIsActive === false) return;
-
-            const updateTask = !currentTask.taskIsActive;
-
-            const response = await api.patch(`/task/${id}`, {
-                taskIsActive: updateTask
-            });
-
-            setTasks(prev =>
-                prev.map(task =>
-                    task.id === id ? { ...task, taskIsActive: updateTask } : task)
-            )
-
-            console.log(response.data)
-        } catch (error) {
-            console.error(error)
-        }
-    }
+    }, [fetchTasks]);
 
     return (
-        <TasksContext.Provider value={{ tasks, fetchTasks, DeleteTask, viewTask, CheckTask, CreateTask, viewTaskData }}>
+        <TasksContext.Provider
+            value={{
+                tasks,
+                fetchTasks,
+                DeleteTask,
+                viewTask,
+                CheckTask,
+                CreateTask,
+                viewTaskData,
+            }}
+        >
             {children}
         </TasksContext.Provider>
-    )
+    );
 }

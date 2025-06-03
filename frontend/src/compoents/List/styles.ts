@@ -83,6 +83,17 @@ export const Item = styled.div`
     
     background-color: ${props => props.theme["gray-500"]};
 
+    .description{
+        color: white;
+        width: 100%;
+        font-size: 1rem;
+        text-align: justify;
+        padding: 10px;
+        border: none;
+        background-color: transparent;
+        line-height: 1.5;
+    }
+
     p{  
         max-width: 650px;
         width: 100%;

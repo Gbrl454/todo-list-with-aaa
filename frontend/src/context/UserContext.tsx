@@ -2,8 +2,10 @@ import { createContext } from "react";
 
 interface User{
     username: string,
-    fullname: string,
-    user_email: string,
+    fullName: string,
+    email: string;
+    password: string;
+    passwordConfirmation: string;
 }
 
 interface LoginCredentials{
@@ -11,13 +13,13 @@ interface LoginCredentials{
     password: string
 }
 
-interface ContextUserType{
-    users: User[]
-    fetchUser: (query?: string) => void;
-    createUser: (user: User) => void;
-    loginUser: (credential: LoginCredentials) => Promise<boolean>;
-    currentUser: User | null;
-    logout: () => void;
+interface ContextUserType {
+  users: User[];
+  fetchUser: (query?: string) => void;
+  createUser: (user: User) => void;
+  loginUser: (credential: LoginCredentials) => Promise<{ success: boolean; message?: string }>;
+  currentUser: User | null;
+  logout: () => void;
 }
 
 export const UserContext = createContext<ContextUserType | undefined>(undefined)

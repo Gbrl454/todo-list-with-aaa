@@ -1,5 +1,5 @@
-docker-compose down
-docker network prune -f
-docker container prune -f
+sudo docker-compose down
+sudo docker network prune -f
+sudo docker container prune -f
 sudo rm keycloak_data/ postgres_data/ -rf
-docker-compose up --build
+sudo docker-compose up --build

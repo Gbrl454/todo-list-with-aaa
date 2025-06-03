@@ -27,7 +27,7 @@ export function Header(){
                     <img src={Todo} />
                 </div>
                 <div className="LoginContainer">
-                    <h2>{currentUser?.fullname}</h2>
+                    <h2>{currentUser?.fullName}</h2>
                     <button onClick={handledLogout} type="submit">Sing out</button>
                 </div>
             </HeaderContainer>

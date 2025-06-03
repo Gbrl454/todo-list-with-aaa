@@ -1,93 +1,166 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, type ReactNode } from "react"
-import { api } from "../lib/axios"
-import { UserContext } from "./UserContext"
+import { useEffect, useState, type ReactNode } from "react";
+import { api } from "../lib/axios";
+import { UserContext } from "./UserContext";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+import Cookies from "js-cookie";
+
 
 interface User {
-    username: string,
-    fullname: string,
-    user_email: string,
+    username: string;
+    fullName: string;
+    email: string;
+    password: string;
+    passwordConfirmation: string;
+}
+
+interface JwtPayload {
+    preferred_username: string;
+    given_name: string;
+    family_name: string;
+    email: string;
 }
 
 interface LoginCredentials {
-    username: string,
-    password: string
+    username: string;
+    password: string;
 }
 
-
 interface UserProviderProps {
-    children: ReactNode
+    children: ReactNode;
 }
 
 export function UserProvider({ children }: UserProviderProps) {
-    const [users, setUsers] = useState<User[]>([])
-    const [currentUser, setCurrentUser] = useState<User | null>(null)
+    const [users, setUsers] = useState<User[]>([]);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true); // novo estado loading
 
-    async function fetchUser(query: string = "") {
+    async function fetchUser(query = "") {
         try {
-            //vai ser descontinuado
-            const response = await api.get("/auth/register", { params: { q: query } })
-            setUsers(response.data)
+            const response = await api.get("/users", { params: { q: query } });
+            setUsers(response.data);
         } catch (error) {
-            console.log(error)
+            console.error("Erro ao buscar usuários:", error);
         }
     }
 
     async function createUser(user: User): Promise<void> {
         try {
-            await api.post("/auth/register", user)
-            fetchUser()
+            console.log(user)
+            await api.post("/auth/register", user);
+            toast.success("Usuário registrado com sucesso!");
         } catch (error) {
-            console.log(error)
+            const msg = axios.isAxiosError(error)
+                ? error.response?.data?.message || "Erro ao registrar usuário."
+                : "Erro desconhecido.";
+            toast.error(msg);
+            console.error(error);
         }
     }
 
-    async function loginUser(credentials: LoginCredentials): Promise<boolean> {
+    async function loginUser(
+        credentials: LoginCredentials
+    ): Promise<{ success: boolean; message?: string }> {
         try {
-            await api.post("/auth/login", credentials, {
+            const response = await api.post("/auth/login", credentials, {
                 withCredentials: true,
             });
 
-            // Após login, faz uma requisição para obter os dados do usuário autenticado
-            const meResponse = await api.get("/auth/refresh", {
-                withCredentials: true,
+            const { accessToken, refreshToken, expiresIn } = response.data;
+
+            if (!accessToken) {
+                return { success: false, message: "Token não recebido." };
+            }
+
+            // ✅ Salva o token no cookie
+            Cookies.set("X-TOKEN-TODO", JSON.stringify({ accessToken, refreshToken }), {
+                expires: expiresIn / 60 / 24, // converter segundos para dias
+                secure: true,
+                sameSite: "Strict",
             });
 
-            setCurrentUser(meResponse.data)
-            return true
+            const decoded = jwtDecode<JwtPayload>(accessToken);
+
+            const user: User = {
+                username: decoded.preferred_username,
+                fullName: `${decoded.given_name} ${decoded.family_name}`,
+                email: decoded.email,
+                password: "",
+                passwordConfirmation: "",
+            };
+
+            setCurrentUser(user);
+            return { success: true };
         } catch (error: any) {
-            console.error("Erro no login:", error?.response?.data || error.message);
-            return false
-        }
-    }
-
-    async function logout() {
-        try {
-            await api.post("/auth/logout", null, { withCredentials: true });
-            setCurrentUser(null);
-        } catch (error) {
-            console.error("Erro no logout:", error);
-        } finally{
-            setCurrentUser(null)
+            const msg = axios.isAxiosError(error)
+                ? error.response?.data?.message || "Erro ao fazer login."
+                : "Erro desconhecido ao fazer login.";
+            console.error(msg);
+            return { success: false, message: msg };
         }
     }
 
     useEffect(() => {
-        async function loadUser() {
-            try {
-                const response = await api.get("/auth/refresh", { withCredentials: true })
-                setCurrentUser(response.data)
-            } catch {
-                console.warn("Usuário não autenticado");
-                setCurrentUser(null);
-            }
+  async function loadUser() {
+    setLoading(true);
+    try {
+      const tokenJson = Cookies.get("X-TOKEN-TODO");
+      if (!tokenJson) {
+        setCurrentUser(null);
+        return;
+      }
+
+      const tokenObj = JSON.parse(tokenJson);
+      const accessToken = tokenObj.accessToken;
+
+      if (!accessToken) {
+        setCurrentUser(null);
+        Cookies.remove("X-TOKEN-TODO");
+        return;
+      }
+
+      // Decodifica o token para pegar os dados do usuário
+      const decoded = jwtDecode(accessToken);
+
+      const user = {
+        username: decoded.preferred_username,
+        fullName: `${decoded.given_name} ${decoded.family_name}`,
+        email: decoded.email,
+        password: "",
+        passwordConfirmation: "",
+      };
+
+      setCurrentUser(user);
+    } catch (error) {
+      setCurrentUser(null);
+      Cookies.remove("X-TOKEN-TODO");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadUser();
+}, []);
+
+    async function logout() {
+        try {
+            await api.post("/auth/logout", null, { withCredentials: true });
+        } catch (error) {
+            console.error("Erro no logout:", error);
+        } finally {
+            Cookies.remove("X-TOKEN-TODO"); // <-- remove o token do cookie
+            setCurrentUser(null);
         }
-        loadUser()
-    }, []);
+    }
 
     return (
-        <UserContext.Provider value={{ users, fetchUser, createUser, loginUser, currentUser, logout }}>
+        <UserContext.Provider
+            value={{ users, fetchUser, createUser, loginUser, currentUser, logout, loading }}
+        >
             {children}
         </UserContext.Provider>
-    )
+    );
 }

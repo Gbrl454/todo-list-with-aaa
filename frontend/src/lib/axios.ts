@@ -1,7 +1,8 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://backend:8080/todo-list',
   withCredentials: true
-})
+});
+
 

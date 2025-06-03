@@ -3,9 +3,11 @@ import { Register, RegisterContainer, RegisterPageContainer } from "./styles";
 import Todo from "../../assets/Todo.svg";
 import { useContext, useState } from "react";
 import { UserContext } from "../../context/UserContext";
+import { useNavigate } from "react-router-dom";
 
 
 export function RegisterBody() {
+    const navigator = useNavigate()
     const context = useContext(UserContext)
 
     if (!context) {
@@ -15,7 +17,7 @@ export function RegisterBody() {
     const { createUser } = context;
 
     const [username, setUserName] = useState<string>('');
-    const [fullname, setFullname] = useState<string>('');
+    const [fullName, setFullName] = useState<string>('');
     const [user_email, setUser_email] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [confirmpassword, setConfirmpassword] = useState<string>('');
@@ -23,27 +25,47 @@ export function RegisterBody() {
 
     const handledSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const trimmedUsername = username.trim();
+        const trimmedFullName = fullName.trim();
+        const trimmedEmail = user_email.trim();
+        const trimmedPassword = password.trim();
+        const trimmedConfirmPassword = confirmpassword.trim();
+
+        if (trimmedPassword !== trimmedConfirmPassword) {
+            window.alert('Senha não confere');
+            setPassword('');
+            setConfirmpassword('');
+            return;
+        }
+
         try {
-            console.log({ username, fullname, user_email, password })
+            await createUser({
+                username: trimmedUsername,
+                fullName: trimmedFullName,
+                email: trimmedEmail,
+                password: trimmedPassword,
+                passwordConfirmation: trimmedConfirmPassword
+            });
 
-            if (confirmpassword != password) return (window.alert('senha não confere'), setPassword(''), setConfirmpassword(''), null)
-
-            createUser({ username, fullname, user_email, password })
-
-            setUserName('')
-            setFullname('')
-            setUser_email('')
-            setPassword('')
+            // Limpa os campos após o cadastro
+            setUserName('');
+            setFullName('');
+            setUser_email('');
+            setPassword('');
+            setConfirmpassword('');
+            navigator('/login')
         } catch (error: any) {
             if (error.response) {
                 console.error('Erro de validação:', error.response.data);
-                alert(JSON.stringify(error.response.data, null, 2)); // mostra os problemas
+                alert(JSON.stringify(error.response.data, null, 2));
             } else {
                 console.error(error);
                 alert('Erro inesperado ao cadastrar médico.');
             }
         }
     }
+
 
 
     return (
@@ -61,8 +83,8 @@ export function RegisterBody() {
                                     placeholder="UserName" />
                             </label>
                             <label>
-                                <input value={fullname}
-                                    onChange={(e) => setFullname(e.target.value)}
+                                <input value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
                                     placeholder="Name" />
                             </label>
                             <label>
