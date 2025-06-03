@@ -47,7 +47,7 @@ services:
       --features=scripts 
       -Dkeycloak.profile.feature.upload_scripts=enabled
 
-  keycloak-init:
+  keycloak_init:
     image: node:20-alpine
     depends_on:
       - keycloak
@@ -64,6 +64,28 @@ services:
       "
     volumes:
       - ./scripts:/scripts:ro
+    networks:
+      - dev_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quarkus_backend
+    restart: always
+    environment:
+      DB_USERNAME: dev_user
+      DB_PASSWORD: dev_pass
+      DB_URL: jdbc:postgresql://postgres:5432/master
+      KC_URL: http://keycloak:8080
+      TODO_CLIENT_SECRET: jJIhoDhAXYwzXmnsFk7xYIieuw9LqAdS
+      ADMIN_CLIENT_SECRET: td0sJSxg6xVjUuK1JnAjic63iJ4zVf8e
+    depends_on:
+      - postgres
+      - keycloak
+      - keycloak_init
+    ports:
+      - "8087:8080"
     networks:
       - dev_net
 
