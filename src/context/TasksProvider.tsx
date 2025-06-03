@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     useEffect,
     useState,
@@ -9,15 +10,15 @@ import { TasksContext } from "./TasksContext";
 import Cookies from "js-cookie";
 
 interface Tasks {
-    id: string;
-    user_id: string;
+    hashTask: string;
+    userId: string;
     name: string;
     description: string;
-    visibilite: string; // Mantido como está, caso a API use esse nome
+    visibilite: string;
     limitDate: Date | null;
     completionDate: Date | null;
     create_at: string;
-    taskIsActive: boolean;
+    is_active: boolean;
 }
 
 interface TaskInput {
@@ -31,12 +32,25 @@ interface TasksProviderProps {
     children: ReactNode;
 }
 
-function formatTaskDates(task: any): Tasks {
+// Função que converte a resposta da API para o formato esperado no frontend
+function formatTask(task: any): Tasks {
     return {
-        ...task,
-        limitDate: task.limitDate ? new Date(task.limitDate) : null,
-        completionDate: task.completionDate ? new Date(task.completionDate) : null,
+        hashTask: task.hashTask,
+        userId: task.userId || "",
+        name: task.nmTask,
+        description: task.dsTask || "",
+        visibilite: task.isPrivateTask ? "private" : "public",
+        limitDate: task.dtDeadline ? new Date(task.dtDeadline) : null,
+        completionDate: task.dtDo ? new Date(task.dtDo) : null,
+        create_at: task.create_at || "",
+        is_active: !task.wasDone,
     };
+}
+
+function getAccessToken(): string | null {
+    const tokenJson = Cookies.get("X-TOKEN-TODO");
+    const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+    return tokenObj?.accessToken ?? null;
 }
 
 export function TasksProvider({ children }: TasksProviderProps) {
@@ -45,7 +59,22 @@ export function TasksProvider({ children }: TasksProviderProps) {
 
     const fetchTasks = useCallback(async (query: string = "") => {
         try {
-            const response = await api.get("/task", { params: { q: query } });
+            const tokenJson = Cookies.get("X-TOKEN-TODO");
+            const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+            const accessToken = tokenObj?.accessToken;
+
+            if (!accessToken) {
+                console.warn("Tentativa de buscar tarefas sem autenticação.");
+                setTasks([]);
+                return;
+            }
+
+            const response = await api.get("/task", {
+                params: { q: query },
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
 
             console.log("Dados recebidos da API:", response.data);
 
@@ -55,99 +84,177 @@ export function TasksProvider({ children }: TasksProviderProps) {
                     ? response.data.tasks
                     : [];
 
-            const tasksFormatted = data.map(formatTaskDates);
+            const tasksFormatted = data.map(formatTask);
             setTasks(tasksFormatted);
         } catch (error) {
-            const token = Cookies.get("X-TOKEN-TODO");
-            if (!token) {
-                console.warn("Tentativa de buscar tarefas sem autenticação.");
-                return;
-            }
             console.error("Erro ao buscar tasks:", error);
             setTasks([]);
         }
     }, []);
 
     const CreateTask = useCallback(async (task: TaskInput): Promise<void> => {
-    const { nmTask, dsTask, isPrivateTask, dtDeadline } = task;
+        const { nmTask, dsTask, isPrivateTask = true, dtDeadline } = task;
 
-    if (!nmTask.trim()) {
-        alert("O nome da tarefa é obrigatório.");
-        return;
-    }
-
-    try {
-        // Supondo que dtDeadline seja uma string "yyyy-MM-dd"
-        // Transformar para "yyyy-MM-ddT00:00:00"
-        let formattedDeadline = dtDeadline;
-        if (dtDeadline && dtDeadline.length === 10) { // formato esperado "yyyy-MM-dd"
-            formattedDeadline = dtDeadline + "T00:00:00";
+        if (!nmTask.trim()) {
+            alert("O nome da tarefa é obrigatório.");
+            return;
         }
 
-        const payload = { nmTask, dsTask, isPrivateTask, dtDeadline: formattedDeadline };
-        console.log('Dados enviados para criar tarefa:', payload);
-
-        const response = await api.post("/task", payload, {
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-
-        console.log("Resposta da API:", response.data);
-
-        if (!response.data?.id) {
-            throw new Error("Resposta inesperada da API ao criar tarefa.");
+        if (!dsTask.trim()) {
+            alert("A descrição da tarefa é obrigatória.");
+            return;
         }
 
-        const newTask = formatTaskDates(response.data);
-        setTasks((prev) => [...prev, newTask]);
+        try {
+            let formattedDeadline = dtDeadline;
 
-        console.log("Tarefa criada com sucesso:", newTask);
-    } catch (error: any) {
-        console.error("Erro ao criar tarefa:", error.response?.data || error.message || error);
-    }
-}, [setTasks, formatTaskDates]);
+            if (dtDeadline) {
+                if (dtDeadline.length === 10) {
+                    formattedDeadline = dtDeadline + "T23:59:59";
+                } else if (dtDeadline.length === 16) {
+                    formattedDeadline = dtDeadline + ":00";
+                }
+            }
 
-    const DeleteTask = useCallback(async (id: string) => {
+            const payload = {
+                nmTask,
+                dsTask,
+                isPrivateTask,
+                dtDeadline: formattedDeadline,
+            };
+
+            console.log("Dados enviados para criar tarefa:", payload);
+
+            // Pega o token do cookie
+            const tokenJson = Cookies.get("X-TOKEN-TODO");
+            const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+            const accessToken = tokenObj?.accessToken;
+
+            if (!accessToken) {
+                alert("Você precisa estar logado para criar uma tarefa.");
+                return;
+            }
+
+            const response = await api.post("/task", payload, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+
+            console.log("Resposta da API:", response.data);
+
+            if (!response.data?.id) {
+                throw new Error("Resposta inesperada da API ao criar tarefa.");
+            }
+
+            const newTask = formatTask(response.data);
+            setTasks((prev) => [...prev, newTask]);
+
+            console.log("Tarefa criada com sucesso:", newTask);
+        } catch (error: any) {
+            console.error("Erro ao criar tarefa:", {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data,
+                headers: error.response?.headers,
+            });
+        }
+    }, [setTasks]);
+
+    const DeleteTask = useCallback(async (hashTask: string) => {
         if (!window.confirm("Tem certeza que deseja deletar a Task?")) return;
 
         try {
-            await api.delete(`/task/${id}`);
-            setTasks((prev) => prev.filter((task) => task.id !== id));
+            const tokenJson = Cookies.get("X-TOKEN-TODO");
+            const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+            const accessToken = tokenObj?.accessToken;
+
+            if (!accessToken) {
+                console.warn("Tentativa de visualizar tarefa sem autenticação.");
+                return;
+            }
+
+            const encodedHashTask = encodeURIComponent(hashTask);
+            const response = await api.delete(`/task/${encodedHashTask}`, {
+                withCredentials: true,
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+            setTasks((prev) => prev.filter((task) => task.hashTask !== hashTask));
+            console.log(response)
         } catch (error) {
             console.error("Erro ao deletar tarefa:", error);
         }
     }, []);
 
-    const viewTask = useCallback(async (id: string) => {
-        try {
-            const response = await api.get(`/task/${id}`);
-            const taskFormatted = formatTaskDates(response.data);
-            setViewTaskData(taskFormatted);
-            console.log(taskFormatted);
-        } catch (error) {
-            console.error("Erro ao visualizar tarefa:", error);
-        }
-    }, []);
+    const viewTask = useCallback(
+        async (hashTask: string) => {
+            try {
+                // Pega o token dentro do callback
+                const tokenJson = Cookies.get("X-TOKEN-TODO");
+                const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+                const accessToken = tokenObj?.accessToken;
 
-    const CheckTask = useCallback(async (id: string): Promise<void> => {
+                if (!accessToken) {
+                    console.warn("Tentativa de visualizar tarefa sem autenticação.");
+                    return;
+                }
+
+                const encodedHashTask = encodeURIComponent(hashTask);
+                const response = await api.get(`/task/${encodedHashTask}`, {
+                    withCredentials: true,
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+
+                const taskFormatted = formatTask(response.data);
+                setViewTaskData(taskFormatted);
+                console.log(taskFormatted);
+            } catch (error) {
+                console.error("Erro ao visualizar tarefa:", error);
+            }
+        },
+        [setViewTaskData] // só depende da função de setar estado
+    );
+
+    const CheckTask = useCallback(async (hashTask: string): Promise<void> => {
         try {
-            const currentTask = tasks.find((task) => task.id === id);
+            const accessToken = getAccessToken();
+            if (!accessToken) {
+                console.warn("Tentativa de atualizar tarefa sem autenticação.");
+                return;
+            }
+
+
+            const currentTask = tasks.find((task) => task.hashTask === hashTask);
             if (!currentTask) return;
 
-            const updateTask = !currentTask.taskIsActive;
-
-            const response = await api.put(`/task/${id}`, {
-                taskIsActive: updateTask,
-            });
-
-            setTasks((prev) =>
-                prev.map((task) =>
-                    task.id === id ? { ...task, taskIsActive: updateTask } : task
-                )
+            const updateTask = !currentTask.is_active;
+            const encodedHashTask = encodeURIComponent(hashTask);
+            const response = await api.put(
+                `/task/${encodedHashTask}/do`,
+                { is_active: updateTask },
+                {
+                    withCredentials: true,
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
             );
 
-            console.log("Status da tarefa atualizado:", response.data);
+            if (response.status === 200) {
+                setTasks((prev) =>
+                    prev.map((task) =>
+                        task.hashTask === hashTask
+                            ? { ...task, is_active: updateTask }
+                            : task
+                    )
+                );
+                console.log("Status da tarefa atualizado:", response.data);
+            }
         } catch (error) {
             console.error("Erro ao atualizar status da tarefa:", error);
         }

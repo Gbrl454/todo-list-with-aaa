@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "../lib/axios";
@@ -10,7 +11,7 @@ import Cookies from "js-cookie";
 
 interface User {
     username: string;
-    fullname: string;
+    fullName: string;
     email: string;
     password: string;
     passwordConfirmation: string;
@@ -48,6 +49,7 @@ export function UserProvider({ children }: UserProviderProps) {
 
     async function createUser(user: User): Promise<void> {
         try {
+            console.log(user)
             await api.post("/auth/register", user);
             toast.success("Usuário registrado com sucesso!");
         } catch (error) {
@@ -84,7 +86,7 @@ export function UserProvider({ children }: UserProviderProps) {
 
             const user: User = {
                 username: decoded.preferred_username,
-                fullname: `${decoded.given_name} ${decoded.family_name}`,
+                fullName: `${decoded.given_name} ${decoded.family_name}`,
                 email: decoded.email,
                 password: "",
                 passwordConfirmation: "",
@@ -100,13 +102,29 @@ export function UserProvider({ children }: UserProviderProps) {
             return { success: false, message: msg };
         }
     }
+
     useEffect(() => {
         async function loadUser() {
+            setLoading(true);
             try {
-                setLoading(true);
-                const response = await api.put("/auth/refresh", {}, { withCredentials: true });
+                const tokenJson = Cookies.get("X-TOKEN-TODO");
+          if (!tokenJson) {   setCurrentUser(null);
+                    return;
+                }
 
-                const { accessToken, refreshToken, expiresIn } = response.data;
+                const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+
+                const response = await api.put(
+                    `/auth/refresh`,
+                    {refreshToken:tokenObj?.refreshToken},
+                    {
+                        withCredentials: true, headers: {
+                            Authorization: `Bearer ${tokenObj?.accessToken}`,
+                        },
+                    }
+                );
+
+                const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
 
                 if (!accessToken) {
                     setCurrentUser(null);
@@ -116,7 +134,7 @@ export function UserProvider({ children }: UserProviderProps) {
 
                 Cookies.set(
                     "X-TOKEN-TODO",
-                    JSON.stringify({ accessToken, refreshToken }),
+                    JSON.stringify({ accessToken, refreshToken: newRefreshToken }),
                     {
                         expires: expiresIn / 60 / 24,
                         secure: true,
@@ -128,7 +146,7 @@ export function UserProvider({ children }: UserProviderProps) {
 
                 const user: User = {
                     username: decoded.preferred_username,
-                    fullname: `${decoded.given_name} ${decoded.family_name}`,
+                    fullName: `${decoded.given_name} ${decoded.family_name}`,
                     email: decoded.email,
                     password: "",
                     passwordConfirmation: "",

@@ -2,7 +2,7 @@ import { createContext } from "react";
 
 interface User{
     username: string,
-    fullname: string,
+    fullName: string,
     email: string;
     password: string;
     passwordConfirmation: string;

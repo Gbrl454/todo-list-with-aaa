@@ -1,15 +1,15 @@
 import { createContext } from "react";
 
 interface Task {
-    id: string,
-    user_id: string,
-    name: string,
-    description: string,
-    visibilite: string,
-    limitDate: Date,
-    completionDate: Date | null,
-    create_at: string | null,
-    taskIsActive: boolean,
+    hashTask: string;
+    userId: string;
+    name: string;
+    description: string;
+    visibilite: string;
+    limitDate: Date | null;
+    completionDate: Date | null;
+    create_at: string;
+    is_active: boolean;
 }
 
 interface TaskInput {
