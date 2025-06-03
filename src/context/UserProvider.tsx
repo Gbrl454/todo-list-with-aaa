@@ -104,65 +104,46 @@ export function UserProvider({ children }: UserProviderProps) {
     }
 
     useEffect(() => {
-        async function loadUser() {
-            setLoading(true);
-            try {
-                const tokenJson = Cookies.get("X-TOKEN-TODO");
-          if (!tokenJson) {   setCurrentUser(null);
-                    return;
-                }
+  async function loadUser() {
+    setLoading(true);
+    try {
+      const tokenJson = Cookies.get("X-TOKEN-TODO");
+      if (!tokenJson) {
+        setCurrentUser(null);
+        return;
+      }
 
-                const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
+      const tokenObj = JSON.parse(tokenJson);
+      const accessToken = tokenObj.accessToken;
 
-                const response = await api.put(
-                    `/auth/refresh`,
-                    {refreshToken:tokenObj?.refreshToken},
-                    {
-                        withCredentials: true, headers: {
-                            Authorization: `Bearer ${tokenObj?.accessToken}`,
-                        },
-                    }
-                );
+      if (!accessToken) {
+        setCurrentUser(null);
+        Cookies.remove("X-TOKEN-TODO");
+        return;
+      }
 
-                const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+      // Decodifica o token para pegar os dados do usuário
+      const decoded = jwtDecode(accessToken);
 
-                if (!accessToken) {
-                    setCurrentUser(null);
-                    Cookies.remove("X-TOKEN-TODO");
-                    return;
-                }
+      const user = {
+        username: decoded.preferred_username,
+        fullName: `${decoded.given_name} ${decoded.family_name}`,
+        email: decoded.email,
+        password: "",
+        passwordConfirmation: "",
+      };
 
-                Cookies.set(
-                    "X-TOKEN-TODO",
-                    JSON.stringify({ accessToken, refreshToken: newRefreshToken }),
-                    {
-                        expires: expiresIn / 60 / 24,
-                        secure: true,
-                        sameSite: "Strict",
-                    }
-                );
+      setCurrentUser(user);
+    } catch (error) {
+      setCurrentUser(null);
+      Cookies.remove("X-TOKEN-TODO");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-                const decoded = jwtDecode<JwtPayload>(accessToken);
-
-                const user: User = {
-                    username: decoded.preferred_username,
-                    fullName: `${decoded.given_name} ${decoded.family_name}`,
-                    email: decoded.email,
-                    password: "",
-                    passwordConfirmation: "",
-                };
-
-                setCurrentUser(user);
-            } catch (error) {
-                setCurrentUser(null);
-                Cookies.remove("X-TOKEN-TODO");
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        loadUser();
-    }, []);
+  loadUser();
+}, []);
 
     async function logout() {
         try {

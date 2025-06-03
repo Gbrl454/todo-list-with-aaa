@@ -196,7 +196,7 @@ export function TasksProvider({ children }: TasksProviderProps) {
                 const tokenJson = Cookies.get("X-TOKEN-TODO");
                 const tokenObj = tokenJson ? JSON.parse(tokenJson) : null;
                 const accessToken = tokenObj?.accessToken;
-
+                
                 if (!accessToken) {
                     console.warn("Tentativa de visualizar tarefa sem autenticação.");
                     return;
