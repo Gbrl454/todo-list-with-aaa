@@ -28,9 +28,9 @@ export function App() {
 
                 <Route element={<AuthGuard />}>
                   <Route path="/task" element={<HomePage />} />
-                  
+                  <Route path="/task/:id" element={<ViewPage />} />
                 </Route>
-                <Route path="/task/:id" element={<ViewPage />} />
+              
                 <Route path="*" element={<Navigate to="/auth/login" replace />} />
               </Routes>
             </BrowserRouter>
